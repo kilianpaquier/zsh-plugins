@@ -2,11 +2,9 @@ if (( ! $+commands[mise] )); then
   curl -fsSL https://mise.run | sh
 fi
 
-: "${XDG_CONFIG_HOME:="$HOME/.config/zsh"}"
-
-if [ -z "$NO_MISE_ALIAS" ] && [ ! -f "$XDG_CONFIG_HOME/mise/conf.d/mise.dotfiles.toml" ]; then
-mkdir -p "$XDG_CONFIG_HOME/mise/conf.d"
-cat << EOF > "$XDG_CONFIG_HOME/mise/conf.d/mise.dotfiles.toml"
+if [ -z "$NO_MISE_ALIAS" ] && [ ! -f "$HOME/.config/mise/conf.d/mise.dotfiles.toml" ]; then
+mkdir -p "$HOME/.config/mise/conf.d"
+cat << EOF > "$HOME/.config/mise/conf.d/mise.dotfiles.toml"
 [alias]
 craft = "ubi:kilianpaquier/craft"
 gitlab-storage-cleaner = "ubi:kilianpaquier/gitlab-storage-cleaner"
