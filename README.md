@@ -93,4 +93,5 @@ and then adds (only if it doesn't exist) mise completion file.
 
 This plugin is an alternative one to `mise-activate` which use [shims](https://mise.jdx.dev/dev-tools/shims.html#shims-vs-path) instead of activate script.
 
-When using this plugin, any *new* mise installation (a new tool) must be followed of `mise reshim` to create it associated shim in `$HOME/.local/share/mise/shims`.
+When using this plugin, any new mise installation (a new tool) or tool removal must be followed of `mise reshim` 
+to create (or remove) its associated shim in `$HOME/.local/share/mise/shims`.
