@@ -14,7 +14,9 @@
 - [Goenv](#goenv)
 - [Highlight Styles](#highlight-styles)
 - [Mise](#mise)
-- [Misenv](#misenv)
+- [Mise Activate](#mise-activate)
+- [Mise Completion](#mise-completion)
+- [Mise Shims](#mise-shims)
 
 ## Bash Aliases
 
@@ -71,11 +73,24 @@ and adds a personal configuration file with tools not in default registry.
 
 This personal configuration will not be generated (or removed) if `NO_MISE_CONFIG` environment variable is provided.
 
-## Misenv
+## Mise Activate
 
 Since mise plugin can install mise, it must be executed before the prompt is shown.
-Which can adds latency if mise environment was computed at the same time.
-As such, misenv plugin runs `msie activate zsh` and `mise completion zsh` with 
-the help of [**evalcache**](https://github.com/mroth/evalcache) to have higher loading speed in subsequent shells.
+As `mise activate zsh` can add latency to shell loading, this plugin is separated from installation one to avoid getting before prompt.
 
-Note that if **evalcache** plugin isn't provided, `eval` with a subshell execution will be made, which is slower in loading.
+This plugin can use [**evalcache**](https://github.com/mroth/evalcache) to cache the result of `eval` 
+and gain some background time in subshell executions.
+
+## Mise Completion
+
+Since mise plugin can install mise, it must be executed before the prompt is shown.
+As `mise completion zsh` can add latency to shell loading, this plugin is separated from installation one to avoid getting before prompt.
+
+This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions` 
+and then adds (only if it doesn't exist) mise completion file.
+
+## Mise Shims
+
+This plugin is an alternative one to `mise-activate` which use [shims](https://mise.jdx.dev/dev-tools/shims.html#shims-vs-path) instead of activate script.
+
+When using this plugin, any *new* mise installation (a new tool) must be followed of `mise reshim` to create it associated shim in `$HOME/.local/share/mise/shims`.
