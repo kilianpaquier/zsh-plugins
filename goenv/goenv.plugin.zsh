@@ -1,3 +1,6 @@
+#!/bin/zsh
+# shellcheck disable=SC1071
+
 export GOPATH="$HOME/.cache/go"
 export GOBIN="$GOPATH/bin"
 export PATH="$PATH:$GOBIN"

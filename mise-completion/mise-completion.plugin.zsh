@@ -1,3 +1,6 @@
+#!/bin/zsh
+# shellcheck disable=SC1071
+
 if (( ! $+commands[mise] )); then return; fi
 
 completions="${XDG_CACHE_HOME:-"$HOME/.cache/zsh"}/completions"

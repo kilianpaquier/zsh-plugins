@@ -1,3 +1,6 @@
+#!/bin/zsh
+# shellcheck disable=SC1071
+
 if (( ! $+commands[mise] )); then curl -fsSL https://mise.run | sh; fi
 
 if [ -n "$NO_MISE_CONFIG" ]; then

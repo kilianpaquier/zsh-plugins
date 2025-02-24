@@ -58,7 +58,7 @@ All those aliases are made inside `~/.gitconfig` and not as shell aliases.
 
 Setup various Go environment variables, in particular to avoid `~/go` directory.
 
-As such `GOPATH` is redirected to `~/.cache/go` alongside `imports`. Of course, `PATH` is updated with `GOBIN` path. 
+As such `GOPATH` is redirected to `~/.cache/go` alongside `imports`. Of course, `PATH` is updated with `GOBIN` path.
 
 As for `GOLANGCI_LINT_CACHE` and `GOCACHE`, those two are defined to their default values when not provided.
 
@@ -68,7 +68,7 @@ Removes all `underline` styles from [**zsh-syntax-highlighting**](https://github
 
 ## Mise
 
-Installs [**mise**](https://mise.jdx.dev/) in case it doesn't exists 
+Installs [**mise**](https://mise.jdx.dev/) in case it doesn't exists
 and adds a personal configuration file with tools not in default registry.
 
 This personal configuration will not be generated (or removed) if `NO_MISE_CONFIG` environment variable is provided.
@@ -78,7 +78,7 @@ This personal configuration will not be generated (or removed) if `NO_MISE_CONFI
 Since mise plugin can install mise, it must be executed before the prompt is shown.
 As `mise activate zsh` can add latency to shell loading, this plugin is separated from installation one to avoid getting before prompt.
 
-This plugin can use [**evalcache**](https://github.com/mroth/evalcache) to cache the result of `eval` 
+This plugin can use [**evalcache**](https://github.com/mroth/evalcache) to cache the result of `eval`
 and gain some background time in subshell executions.
 
 ## Mise Completion
@@ -86,12 +86,12 @@ and gain some background time in subshell executions.
 Since mise plugin can install mise, it must be executed before the prompt is shown.
 As `mise completion zsh` can add latency to shell loading, this plugin is separated from installation one to avoid getting before prompt.
 
-This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions` 
+This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
 and then adds (only if it doesn't exist) mise completion file.
 
 ## Mise Shims
 
 This plugin is an alternative one to `mise-activate` which use [shims](https://mise.jdx.dev/dev-tools/shims.html#shims-vs-path) instead of activate script.
 
-When using this plugin, any new mise installation (a new tool) or tool removal must be followed of `mise reshim` 
+When using this plugin, any new mise installation (a new tool) or tool removal must be followed of `mise reshim`
 to create (or remove) its associated shim in `$HOME/.local/share/mise/shims`.
