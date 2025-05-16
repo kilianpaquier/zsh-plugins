@@ -10,7 +10,7 @@ git config --global alias.c 'commit -m'
 git config --global alias.cp 'cherry-pick'
 git config --global alias.current 'branch --show-current'
 git config --global alias.upstream '!f() { git branch --set-upstream-to="${1-origin}/$(git current)" "$(git current)"; }; f'
-git config --global alias.ls 'log --reverse'
+git config --global alias.ls 'log'
 git config --global alias.last 'ls -1 HEAD --stat'
 git config --global alias.ll 'ls --oneline'
 # shellcheck disable=SC2016
