@@ -3,7 +3,6 @@
 ci:
   name: github
 exclude:
-  - chart
   - makefile
 license: mit
 maintainers:
