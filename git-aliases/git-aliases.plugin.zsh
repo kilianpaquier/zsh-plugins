@@ -1,6 +1,8 @@
 #!/bin/zsh
 # shellcheck disable=SC1071
 
+if (( ! $+commands[git] )); then return; fi
+
 git config --global --remove-section alias >/dev/null 2>&1 || true
 
 git config --global alias.alias '!git config --get-regexp ^alias\. | sed -e s/^alias\.// -e s/\ /\ =\ /'
