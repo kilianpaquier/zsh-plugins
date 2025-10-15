@@ -14,3 +14,5 @@ license: mit
 maintainers:
   - name: kilianpaquier
 platform: github
+pre-commit:
+  - conventional-commits
