@@ -10,6 +10,7 @@
 ---
 
 - [Bash Aliases](#bash-aliases)
+- [Bun Env](#bun-env)
 - [Docker Rootless](#docker-rootless)
 - [Fzf](#fzf)
 - [Git Aliases](#git-aliases)
@@ -19,6 +20,7 @@
 - [Mise Activate](#mise-activate)
 - [Mise Completion](#mise-completion)
 - [Mise Shims](#mise-shims)
+- [Terraform](#terraform)
 
 ## Bash Aliases
 
@@ -38,6 +40,12 @@ alias la='ls -A'
 alias lla='ls -lart'
 alias l='ls -CF'
 ```
+
+## Bun Env
+
+This plugin adds `$HOME/.bun/bin` to global `PATH`.
+
+Since `bun` is another package manager for `node` projects (instead of `npm`), it is possible to install globally tools with `bun` (like it is for `npm`), however if this path is not added to global `PATH`, then tools aren't found.
 
 ## Docker Rootless
 
@@ -97,3 +105,7 @@ This plugin is an alternative one to `mise-activate` which use [shims](https://m
 
 When using this plugin, any new mise installation (a new tool) or tool removal must be followed of `mise reshim`
 to create (or remove) its associated shim in `$HOME/.local/share/mise/shims`.
+
+## Terraform
+
+This plugin just aliases `terraform` binary to `tf` in case it is installed.
