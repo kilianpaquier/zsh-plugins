@@ -6,8 +6,7 @@ ci:
   options:
     - codeql
     - harden-runner
-dependencies:
-  manager: dependabot
+    - kickr:github-app
 exclude:
   - makefile
 license: mit
