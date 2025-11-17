@@ -5,6 +5,7 @@ ci:
   provider: gitlab
   options:
     - kickr
+  release: {}
 dependencies:
   manager: renovate
 exclude:
