@@ -2,30 +2,13 @@
 
 ---
 include:
-
   # semantic-release template
   # https://gitlab.com/to-be-continuous/semantic-release
   - project: to-be-continuous/semantic-release
     ref: e32f092873147606d5cb198bba45b470e4826649 # 4.0.1
-    file: "templates/gitlab-ci-semrel.yml"
-
-  # pre-commit template
-  # https://gitlab.com/to-be-continuous/pre-commit
-  - project: to-be-continuous/pre-commit
-    ref: d56e5eb8bc1cf6f038a863678442c50104a3244e # 1.4.0
-    file: "templates/gitlab-ci-pre-commit.yml"
-
-  # Bash template
-  # https://gitlab.com/to-be-continuous/bash
-  - project: to-be-continuous/bash
-    ref: f0d0f552b82c60dfb14eee9eb06c1259f7ec0925 # 3.9.0
-    file: "/templates/gitlab-ci-bash.yml"
+    file: templates/gitlab-ci-semrel.yml
 
 variables:
-  PRE_COMMIT_FILE: .pre-commit-config.yaml
-  BASH_SHELLCHECK_FILES: "**/*.*sh"
-  BASH_BATS_ENABLED: "false"
-
   SEMREL_AUTO_RELEASE_ENABLED: false
   SEMREL_BRANCHES_REF: /^(alpha|beta|dev[a-z]*|main|master|next|rc|staging|v[0-9]+(\.[0-9]+)?\.x)$/
   SEMREL_HOOKS_DIR: scripts
@@ -33,9 +16,6 @@ variables:
   SEMREL_RELEASE_DISABLED: "false"
   SEMREL_REQUIRED_PLUGINS_FILE: .gitlab/semrel-plugins.txt
   SEMREL_TAG_FORMAT: v$${version}
-
-default:
-  interruptible: true
 
 semantic-release-info:
   variables:
