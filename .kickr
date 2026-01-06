@@ -12,5 +12,5 @@ exclude:
   - makefile
 license: mit
 maintainers:
-  - name: kilianpaquier
+  - name: u.kilianpaquier
 platform: gitlab
