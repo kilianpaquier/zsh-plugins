@@ -1,11 +1,11 @@
 # zsh-plugins <!-- omit in toc -->
 
-<p align="center">
+<div align="center">
   <img alt="GitLab Release" src="https://img.shields.io/gitlab/v/release/kilianpaquier%2Fzsh-plugins?gitlab_url=https%3A%2F%2Fgitlab.com&include_prereleases&sort=semver&style=for-the-badge">
   <img alt="GitLab Issues" src="https://img.shields.io/gitlab/issues/open/kilianpaquier%2Fzsh-plugins?gitlab_url=https%3A%2F%2Fgitlab.com&style=for-the-badge">
   <img alt="GitLab License" src="https://img.shields.io/gitlab/license/kilianpaquier%2Fzsh-plugins?gitlab_url=https%3A%2F%2Fgitlab.com&style=for-the-badge">
   <img alt="GitLab CICD" src="https://img.shields.io/gitlab/pipeline-status/kilianpaquier%2Fzsh-plugins?gitlab_url=https%3A%2F%2Fgitlab.com&branch=main&style=for-the-badge">
-</p>
+</div>
 
 ---
 
@@ -17,7 +17,6 @@
 - [Goenv](#goenv)
 - [Highlight Styles](#highlight-styles)
 - [Mise](#mise)
-- [Mise Activate](#mise-activate)
 - [Mise Completion](#mise-completion)
 - [Mise Shims](#mise-shims)
 - [Terraform](#terraform)
@@ -83,14 +82,6 @@ and adds a personal configuration file with tools not in default registry.
 
 This personal configuration will not be generated (or removed) if `NO_MISE_CONFIG` environment variable is provided.
 
-## Mise Activate
-
-Since mise plugin can install mise, it must be executed before the prompt is shown.
-As `mise activate zsh` can add latency to shell loading, this plugin is separated from installation one to avoid getting before prompt.
-
-This plugin can use [**evalcache**](https://github.com/mroth/evalcache) to cache the result of `eval`
-and gain some background time in subshell executions.
-
 ## Mise Completion
 
 Since mise plugin can install mise, it must be executed before the prompt is shown.
@@ -101,7 +92,7 @@ and then adds (only if it doesn't exist) mise completion file.
 
 ## Mise Shims
 
-This plugin is an alternative one to `mise-activate` which use [shims](https://mise.jdx.dev/dev-tools/shims.html#shims-vs-path) instead of activate script.
+This plugin activates `mise` through the [shims](https://mise.jdx.dev/dev-tools/shims.html#shims-vs-path) instead of `activate` script.
 
 When using this plugin, any new mise installation (a new tool) or tool removal must be followed of `mise reshim`
 to create (or remove) its associated shim in `$HOME/.local/share/mise/shims`.
