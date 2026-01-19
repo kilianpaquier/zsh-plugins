@@ -6,13 +6,13 @@ include:
   # pre-commit template
   # https://gitlab.com/to-be-continuous/pre-commit
   - project: to-be-continuous/pre-commit
-    ref: 85ef9be998d1cbabe018eb1b293c09c0c07d448c # 1.4.1
+    ref: 781cb6e8a6a4009a4ca29357fd6aa1a81f9867cd # 1.4.2
     file: templates/gitlab-ci-pre-commit.yml
 
   # Bash template
   # https://gitlab.com/to-be-continuous/bash
   - project: to-be-continuous/bash
-    ref: 0e995dd4d45ffaefd4fee031b8b6785302c4fa48 # 3.9.1
+    ref: 1a8caffe3c41e11722b09db3cb694ea621ee5808 # 3.9.2
     file: /templates/gitlab-ci-bash.yml
 
 variables:
