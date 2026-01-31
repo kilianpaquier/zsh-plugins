@@ -19,6 +19,3 @@ variables:
   PRE_COMMIT_FILE: .pre-commit-config.yaml
   BASH_SHELLCHECK_FILES: "**/*.*sh"
   BASH_BATS_ENABLED: "false"
-
-.bash-base:
-  needs: []
