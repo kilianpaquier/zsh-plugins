@@ -20,6 +20,7 @@
 - [Mise](#mise)
 - [Mise Completion](#mise-completion)
 - [Mise Shims](#mise-shims)
+- [No Proxy](#no-proxy)
 - [Terraform](#terraform)
 
 ## Bash Aliases
@@ -103,6 +104,10 @@ This plugin activates `mise` through the [shims](https://mise.jdx.dev/dev-tools/
 
 When using this plugin, any new mise installation (a new tool) or tool removal must be followed of `mise reshim`
 to create (or remove) its associated shim in `$HOME/.local/share/mise/shims`.
+
+## No Proxy
+
+This plugin removes all `HTTP_PROXY`, `HTTPS_PROXY`, `http_proxy` and `https_proxy` environment variables to avoid any proxy configuration.
 
 ## Terraform
 
