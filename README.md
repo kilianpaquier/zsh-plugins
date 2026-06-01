@@ -16,6 +16,7 @@
 - [Git Aliases](#git-aliases)
 - [Goenv](#goenv)
 - [Highlight Styles](#highlight-styles)
+- [Java LSP](#java-lsp)
 - [Mise](#mise)
 - [Mise Completion](#mise-completion)
 - [Mise Shims](#mise-shims)
@@ -74,6 +75,12 @@ As for `GOLANGCI_LINT_CACHE` and `GOCACHE`, those two are defined to their defau
 ## Highlight Styles
 
 Removes all `underline` styles from [**zsh-syntax-highlighting**](https://github.com/zsh-users/zsh-syntax-highlighting) since I don't really like it.
+
+## Java LSP
+
+Installs `jdtls` (Eclipse JDT Language Server) in `$XDG_DATA_HOME/jdtls` or `$HOME/.local/share/jdtls`.
+This Java Language Server can be easily used by AI agents to easily access source code instead of using terminal commands
+such as `grep`.
 
 ## Mise
 
