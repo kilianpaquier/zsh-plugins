@@ -21,6 +21,7 @@
 - [Mise Completion](#mise-completion)
 - [Mise Shims](#mise-shims)
 - [No Proxy](#no-proxy)
+- [Release Sync](#release-sync)
 - [Terraform](#terraform)
 
 ## Bash Aliases
@@ -108,6 +109,11 @@ to create (or remove) its associated shim in `$HOME/.local/share/mise/shims`.
 ## No Proxy
 
 This plugin removes all `HTTP_PROXY`, `HTTPS_PROXY`, `http_proxy` and `https_proxy` environment variables to avoid any proxy configuration.
+
+## Release Sync
+
+This plugin adds a `release-sync` command to synchronize releases (artifacts included) between GitHub and GitLab repositories.
+For more information, use `release-sync --help` command.
 
 ## Terraform
 
