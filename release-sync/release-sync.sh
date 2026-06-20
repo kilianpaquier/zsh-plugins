@@ -104,8 +104,7 @@ parse_arguments() {
 
   source=$1
   target=$2
-  version=$3
-  shift 3 >/dev/null 2>&1 || true # last argument potentially not there
+  version=$3 # optional
 
   case "$source" in
   *:*)
@@ -162,7 +161,7 @@ get_releases() {
 
   case "$platform" in
   github) gh -R "$repository" release list --json name --limit 100 ;;
-  gitlab) glab api "projects/$(printf '%s' "$repository" | jq -sRr @uri)/releases" ;;
+  gitlab) glab api "projects/$(printf '%s' "$repository" | jq -sRr @uri)/releases" | jq '[.[] | {name}]' ;;
   esac
   return $?
 }
@@ -174,7 +173,7 @@ get_release() {
 
   case "$platform" in
   github) gh -R "$repository" release view "$release" --json name,body,publishedAt ;;
-  gitlab) glab api "projects/$(printf '%s' "$repository" | jq -sRr @uri)/releases/$release" ;;
+  gitlab) glab api "projects/$(printf '%s' "$repository" | jq -sRr @uri)/releases/$release" | jq '{name, description, released_at}' ;;
   esac
   return $?
 }
