@@ -5,13 +5,13 @@ include:
 
   # pre-commit template
   # https://gitlab.com/to-be-continuous/pre-commit
-  - component: $CI_SERVER_FQDN/to-be-continuous/pre-commit/gitlab-ci-pre-commit@805b30e6daceca57eae1296f7864bd65577c0b40 # 1.5.0
+  - remote: https://gitlab.com/to-be-continuous/pre-commit/-/raw/805b30e6daceca57eae1296f7864bd65577c0b40/templates/gitlab-ci-pre-commit.yml # 1.5.0
     inputs:
       pre-commit-file: .pre-commit-config.yaml
 
   # Bash template
   # https://gitlab.com/to-be-continuous/bash
-  - component: $CI_SERVER_FQDN/to-be-continuous/bash/gitlab-ci-bash@25e0ab61ffadef08b7cda4032afbaa859aebc280 # 3.10.0
+  - remote: https://gitlab.com/to-be-continuous/bash/-/raw/25e0ab61ffadef08b7cda4032afbaa859aebc280/templates/gitlab-ci-bash.yml # 3.10.0
     inputs:
       bats-enabled: "false"
       shellcheck-files: "**/*.*sh"
