@@ -3,6 +3,10 @@
 # shellcheck disable=SC3040
 (set -o pipefail >/dev/null 2>&1) && set -o pipefail
 
+trap 'unset -f error info required_command validate_platform help parse_arguments \
+  get_repository get_releases get_release release_name release_body release_date \
+  download_release sync_release main' EXIT
+
 #####################################################################
 #
 # Logging
