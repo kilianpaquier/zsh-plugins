@@ -6,7 +6,6 @@ exclude:
 gitlab:
   options:
     - kickr
-  release: {}
 license: mit
 maintainers:
   - name: u.kilianpaquier

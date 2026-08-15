@@ -10,42 +10,20 @@ include:
       branches-ref: /^(alpha|beta|dev|develop|main|next|rc|staging|v[0-9]+(\.[0-9]+)?\.x)$/
       hooks-dir: scripts
       info-on: all
-      release-disabled: "false"
-      required-plugins-file: .gitlab/semrel-plugins.txt
+      release-disabled: "true"
       tag-format: v$${version}
 
 .semrel-base:
   variables:
     GIT_DEPTH: "0"
-    GITLAB_TOKEN: $RELEASE_TOKEN
 
 semantic-release-info:
   stage: build
-  variables:
-    SEMREL_DRY_RUN: "true"
   script:
-    - !reference [semantic-release, script]
-    - |
-      if [ -f "$SEMREL_CONFIG_DIR/semrel.out.env" ]; then
-        source "$SEMREL_CONFIG_DIR/semrel.out.env"
-        rm "$SEMREL_CONFIG_DIR/semrel.out.env"
-      fi
-    - |
-      echo "BRANCH_SHA=$(echo "$CI_COMMIT_REF_NAME" | sha256sum | cut -c -8)" >> "$SEMREL_CONFIG_DIR/semrel.out.env"
-
-      if [ -n "$SEMREL_INFO_NEXT_VERSION" ]; then
-        echo "SEMREL_INFO_LAST_VERSION=v${SEMREL_INFO_LAST_VERSION#v}" >> "$SEMREL_CONFIG_DIR/semrel.out.env"
-        echo "SEMREL_INFO_NEXT_VERSION=v${SEMREL_INFO_NEXT_VERSION#v}" >> "$SEMREL_CONFIG_DIR/semrel.out.env"
-        echo "SEMREL_INFO_NEXT_VERSION_TYPE=${SEMREL_INFO_NEXT_VERSION_TYPE}" >> "$SEMREL_CONFIG_DIR/semrel.out.env"
-      else
-        DESCRIBE=$(git describe --tags || echo "v1.0.0")
-        echo "SEMREL_INFO_NEXT_VERSION=v${DESCRIBE#v}" >> "$SEMREL_CONFIG_DIR/semrel.out.env"
-        echo "SEMREL_INFO_NEXT_VERSION_TYPE=build" >> "$SEMREL_CONFIG_DIR/semrel.out.env"
-      fi
+    - DESCRIBE=$(git describe --tags || echo "v1.0.0")
+    - echo "SEMREL_INFO_NEXT_VERSION=v${DESCRIBE#v}" >> "$SEMREL_CONFIG_DIR/semrel.out.env"
+    - echo "SEMREL_INFO_NEXT_VERSION_TYPE=build" >> "$SEMREL_CONFIG_DIR/semrel.out.env"
     - cat "$SEMREL_CONFIG_DIR/semrel.out.env"
-
-semantic-release:
-  interruptible: false
 
 semantic-release:dry-run:
   extends: semantic-release
