@@ -231,7 +231,8 @@ sync_release() {
     error "Failed to download release '$release'"
     return 1
   fi
-  rm "$download/"*"$release"* # remove potential archive assets
+  find "$download" -maxdepth 1 -type f -name "*$release*" -delete # remove potential archive assets
+  assets=$(find "$download" -maxdepth 1 -type f | tr '\n' ' ')
 
   release_data=$(get_release "$source_platform" "$source_repository" "$release") || {
     error "Failed to retrieve release '$release' from '$source_platform'"
@@ -241,9 +242,10 @@ sync_release() {
   description=$(printf '%s' "$release_data" | jq -r '."'"$(release_body "$source_platform")"'"')
   released_at=$(printf '%s' "$release_data" | jq -r '."'"$(release_date "$source_platform")"'"')
 
+  # shellcheck disable=SC2086 # assets must be split into one argument per file
   case "$target_platform" in
-  github) gh -R "$target_repository" release create "$release" "$download"/* --title "$title" --notes "$description" ;;
-  gitlab) glab -R "$target_repository" release create "$release" "$download"/* --name "$title" --notes "$description" --released-at "$released_at" ;;
+  github) gh -R "$target_repository" release create "$release" $assets --title "$title" --notes "$description" ;;
+  gitlab) glab -R "$target_repository" release create "$release" $assets --name "$title" --notes "$description" --released-at "$released_at" ;;
   esac
   return $?
 }
