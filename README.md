@@ -13,23 +13,13 @@
   - [With zsh4humans](#with-zsh4humans)
   - [With oh-my-zsh](#with-oh-my-zsh)
 - [Plugins](#plugins)
-  - [Bash Aliases](#bash-aliases)
-  - [Bun Env](#bun-env)
   - [Docker Rootless](#docker-rootless)
-  - [Fzf](#fzf)
-  - [Git Aliases](#git-aliases)
-  - [Goenv](#goenv)
   - [Highlight Styles](#highlight-styles)
   - [History](#history)
-  - [Java LSP](#java-lsp)
   - [Just Completion](#just-completion)
-  - [Mise](#mise)
   - [Mise Completion](#mise-completion)
-  - [Mise Shims](#mise-shims)
-  - [No Proxy](#no-proxy)
   - [Release Sync](#release-sync)
   - [Task Completion](#task-completion)
-  - [Terraform](#terraform)
 
 ## Install
 
@@ -111,55 +101,16 @@ git -C "$ZSH_CUSTOM/zsh-plugins" checkout v0.2.0
 
 ## Plugins
 
-### Bash Aliases
-
-Defines various aliases that can be found in `~/.bashrc` by default:
-
-```sh
-alias ls='ls --color=auto'
-alias dir='dir --color=auto'
-alias vdir='vdir --color=auto'
-
-alias grep='grep --color=auto'
-alias fgrep='fgrep --color=auto'
-alias egrep='egrep --color=auto'
-
-alias ll='ls -l'
-alias la='ls -A'
-alias lla='ls -lart'
-alias l='ls -CF'
-```
-
-### Bun Env
-
-This plugin adds `$HOME/.bun/bin` to global `PATH`.
-
-Since `bun` is another package manager for `node` projects (instead of `npm`), it is possible to install globally tools with `bun` (like it is for `npm`), however if this path is not added to global `PATH`, then tools aren't found.
-
 ### Docker Rootless
 
-Installs docker and setup rootless installation if not already installed.
+Exports `DOCKER_HOST` to `unix://$XDG_RUNTIME_DIR/docker.sock` or `unix:///run/user/$UID/docker.sock`
+when a rootless docker installation is detected.
 
-In case Docker is already installed, then a simple export of `DOCKER_HOST` is made to `unix:///run/user/1000/docker.sock`.
+Detection is the presence of the systemd user unit created by `dockerd-rootless-setuptool.sh install`,
+in `$XDG_CONFIG_HOME/systemd/user/docker.service` or `$HOME/.config/systemd/user/docker.service`.
+It relies on a single file check to keep shell startup free of any command execution.
 
-### Fzf
-
-Installs [**fzf**](https://github.com/junegunn/fzf) if not already installed.
-I would recommend using [**fzf-tab**](https://github.com/Aloxaf/fzf-tab) plugin with this one to setup easily **fzf** 😉.
-
-### Git Aliases
-
-Setup various git aliases, you may check the plugin file for more information.
-
-All those aliases are made inside `~/.gitconfig` and not as shell aliases.
-
-### Goenv
-
-Setup various Go environment variables, in particular to avoid `~/go` directory.
-
-As such `GOPATH` is redirected to `~/.cache/go` alongside `imports`. Of course, `PATH` is updated with `GOBIN` path.
-
-As for `GOLANGCI_LINT_CACHE` and `GOCACHE`, those two are defined to their default values when not provided.
+This plugin installs nothing, docker itself must be set up beforehand.
 
 ### Highlight Styles
 
@@ -170,24 +121,11 @@ Removes all `underline` styles from [**zsh-syntax-highlighting**](https://github
 Sets zsh history options: extended timestamps, immediate write, sharing between sessions,
 and duplicate or blank filtering.
 
-### Java LSP
-
-Installs `jdtls` (Eclipse JDT Language Server) in `$XDG_DATA_HOME/jdtls` or `$HOME/.local/share/jdtls`.
-This Java Language Server can be easily used by AI agents to easily access source code instead of using terminal commands
-such as `grep`.
-
 ### Just Completion
 
 This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
 and then adds (only if it doesn't exist) `just` completion file, generated once with `just --completions zsh`
 instead of evaluating it on every shell startup.
-
-### Mise
-
-Installs [**mise**](https://mise.jdx.dev/) in case it doesn't exists
-and adds a personal configuration file with tools not in default registry.
-
-This personal configuration will not be generated (or removed) if `NO_MISE_CONFIG` environment variable is provided.
 
 ### Mise Completion
 
@@ -196,17 +134,6 @@ As `mise completion zsh` can add latency to shell loading, this plugin is separa
 
 This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
 and then adds (only if it doesn't exist) mise completion file.
-
-### Mise Shims
-
-This plugin activates `mise` through the [shims](https://mise.jdx.dev/dev-tools/shims.html#shims-vs-path) instead of `activate` script.
-
-When using this plugin, any new mise installation (a new tool) or tool removal must be followed of `mise reshim`
-to create (or remove) its associated shim in `$HOME/.local/share/mise/shims`.
-
-### No Proxy
-
-This plugin removes all `HTTP_PROXY`, `HTTPS_PROXY`, `http_proxy` and `https_proxy` environment variables to avoid any proxy configuration.
 
 ### Release Sync
 
@@ -218,7 +145,3 @@ For more information, use `release-sync --help` command.
 This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
 and then adds (only if it doesn't exist) `task` completion file, generated once with `task --completion zsh`
 instead of evaluating it on every shell startup.
-
-### Terraform
-
-This plugin just aliases `terraform` binary to `tf` in case it is installed.

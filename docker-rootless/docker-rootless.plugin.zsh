@@ -1,7 +1,6 @@
 #!/bin/zsh
 # shellcheck disable=SC1071
 
-if (( ! $+commands[docker] )); then
-  curl -fSL https://get.docker.com | sh && dockerd-rootless-setuptool.sh install
+if [ -f "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/docker.service" ]; then
+  export DOCKER_HOST="unix://${XDG_RUNTIME_DIR:-/run/user/$UID}/docker.sock"
 fi
-export DOCKER_HOST="unix:///run/user/$(id -u)/docker.sock"
