@@ -17,11 +17,13 @@
 - [Goenv](#goenv)
 - [Highlight Styles](#highlight-styles)
 - [Java LSP](#java-lsp)
+- [Just Completion](#just-completion)
 - [Mise](#mise)
 - [Mise Completion](#mise-completion)
 - [Mise Shims](#mise-shims)
 - [No Proxy](#no-proxy)
 - [Release Sync](#release-sync)
+- [Task Completion](#task-completion)
 - [Terraform](#terraform)
 
 ## Bash Aliases
@@ -84,6 +86,12 @@ Installs `jdtls` (Eclipse JDT Language Server) in `$XDG_DATA_HOME/jdtls` or `$HO
 This Java Language Server can be easily used by AI agents to easily access source code instead of using terminal commands
 such as `grep`.
 
+## Just Completion
+
+This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
+and then adds (only if it doesn't exist) `just` completion file, generated once with `just --completions zsh`
+instead of evaluating it on every shell startup.
+
 ## Mise
 
 Installs [**mise**](https://mise.jdx.dev/) in case it doesn't exists
@@ -114,6 +122,12 @@ This plugin removes all `HTTP_PROXY`, `HTTPS_PROXY`, `http_proxy` and `https_pro
 
 This plugin adds a `release-sync` command to synchronize releases (artifacts included) between GitHub and GitLab repositories.
 For more information, use `release-sync --help` command.
+
+## Task Completion
+
+This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
+and then adds (only if it doesn't exist) `task` completion file, generated once with `task --completion zsh`
+instead of evaluating it on every shell startup.
 
 ## Terraform
 
