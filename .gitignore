@@ -2,7 +2,9 @@
 
 # Various build / compile directories
 dist/
+logs/
 reports/
+tmp/
 
 # Created by https://www.toptal.com/developers/gitignore/api/dotenv
 # Edit at https://www.toptal.com/developers/gitignore?templates=dotenv
