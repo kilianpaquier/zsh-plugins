@@ -2,7 +2,6 @@
 
 # shellcheck disable=SC3040
 (set -o pipefail >/dev/null 2>&1) && set -o pipefail
-set -e
 
 trap 'unset -f error info command_targets target_probe dir_size target_size target_clean \
   report_stale clean_stale \
@@ -291,7 +290,7 @@ parse_arguments() {
     case "$arg" in
     --run) run=1 ;;
     --all) all=1 ;;
-    --help) help; exit 0 ;;
+    --help) help; return 1 ;;
     --bun|--docker|--go|--golangci-lint|--mise|--mvn|--npm|--pre-commit|--uv|--copilot|--claude|--codex|--vscode-server)
       selected="$selected ${arg#--}"
       ;;
@@ -300,7 +299,7 @@ parse_arguments() {
       case "$arg" in
       *[!-arh]*) help; error "Unknown argument '$arg'."; return $? ;;
       esac
-      case "$arg" in *h*) help; exit 0 ;; esac
+      case "$arg" in *h*) help; return 1 ;; esac
       case "$arg" in *a*) all=1 ;; esac
       case "$arg" in *r*) run=1 ;; esac
       ;;
