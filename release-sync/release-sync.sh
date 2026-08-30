@@ -1,11 +1,10 @@
 #!/bin/sh
 
+# zsh autoloads this file as a function, keep option and trap changes out of the caller's shell
+[ -z "$ZSH_VERSION" ] || setopt localoptions localtraps
+
 # shellcheck disable=SC3040
 (set -o pipefail >/dev/null 2>&1) && set -o pipefail
-
-trap 'unset -f error info required_command validate_platform help parse_arguments \
-  get_repository get_releases get_release release_name release_body release_date \
-  download_release sync_release main' EXIT
 
 #####################################################################
 #
@@ -37,6 +36,23 @@ target_platform=
 source_repository=
 target_repository=
 version=
+download_tmpdir=
+
+cleanup() {
+  [ -z "$download_tmpdir" ] || rm -rf "$download_tmpdir"
+  unset -f error info required_command validate_platform usage parse_arguments \
+    get_repository get_releases get_release release_name release_body release_date \
+    download_release sync_release main cleanup
+}
+trap cleanup EXIT
+
+# zsh aborts the function on Ctrl-C without running the EXIT trap
+if [ -n "$ZSH_VERSION" ]; then
+  TRAPINT() {
+    cleanup
+    return $((128 + $1))
+  }
+fi
 
 required_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -49,11 +65,11 @@ validate_platform() {
   case "$1" in
   github) required_command gh ;;
   gitlab) required_command glab ;;
-  *) error "Invalid platform '$1'. Must be 'gitlab' or 'github'"; return 1 ;;
+  *) error "Invalid platform '$1'. Must be 'gitlab' or 'github'"; return 2 ;;
   esac
 }
 
-help() {
+usage() {
   cat << 'EOF'
 Usage: release-sync.sh <source> <target> [version]
 
@@ -96,14 +112,14 @@ EOF
 
 parse_arguments() {
   [ $# -ge 2 ] || {
-    help
+    usage
     error "Missing required arguments."
-    return $?
+    return 2
   }
   [ $# -le 3 ] || {
-    help
+    usage
     error "Too many arguments."
-    return $?
+    return 2
   }
 
   source=$1
@@ -126,8 +142,8 @@ parse_arguments() {
   *) target_platform=$target ;;
   esac
 
-  validate_platform "$source_platform" || return 1
-  validate_platform "$target_platform" || return 1
+  validate_platform "$source_platform" || return $?
+  validate_platform "$target_platform" || return $?
 
   if [ -z "$source_repository" ]; then
     source_repository=$(get_repository "$source_platform") || {
@@ -226,12 +242,15 @@ sync_release() {
 
   info "Synchronizing '$release' on '$target_platform'"
 
-  download=$(mktemp -d)
-  if ! download_release "$release" "$download"; then
+  # previous iteration's leftovers, trap only runs once at script exit
+  [ -z "$download_tmpdir" ] || rm -rf "$download_tmpdir"
+
+  download_tmpdir=$(mktemp -d)
+  if ! download_release "$release" "$download_tmpdir"; then
     error "Failed to download release '$release'"
     return 1
   fi
-  rm "$download/"*"$release"* # remove potential archive assets
+  rm "$download_tmpdir/"*"$release"* # remove potential archive assets
 
   release_data=$(get_release "$source_platform" "$source_repository" "$release") || {
     error "Failed to retrieve release '$release' from '$source_platform'"
@@ -242,8 +261,8 @@ sync_release() {
   released_at=$(printf '%s' "$release_data" | jq -r '."'"$(release_date "$source_platform")"'"')
 
   case "$target_platform" in
-  github) gh -R "$target_repository" release create "$release" "$download"/* --title "$title" --notes "$description" ;;
-  gitlab) glab -R "$target_repository" release create "$release" "$download"/* --name "$title" --notes "$description" --released-at "$released_at" ;;
+  github) gh -R "$target_repository" release create "$release" "$download_tmpdir"/* --title "$title" --notes "$description" ;;
+  gitlab) glab -R "$target_repository" release create "$release" "$download_tmpdir"/* --name "$title" --notes "$description" --released-at "$released_at" ;;
   esac
   return $?
 }
@@ -255,8 +274,8 @@ sync_release() {
 #####################################################################
 
 main() {
-  parse_arguments "$@" || return 1
-  for cmd in mktemp jq tac tr; do required_command $cmd || return 1; done
+  parse_arguments "$@" || return $?
+  for cmd in mktemp jq tac tr; do required_command $cmd || return $?; done
 
   info "Starting synchronization from '$source_platform' to '$target_platform'"
 

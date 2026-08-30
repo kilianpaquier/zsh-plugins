@@ -105,7 +105,7 @@ git -C "$ZSH_CUSTOM/zsh-plugins" checkout v0.2.0
 ### Disk Cleanup
 
 This plugin adds a `disk-cleanup.sh` command that clears dev-tool caches
-and stale tools (Copilot, Claude Code, VSCode Server) versions, skipping anything not installed.
+and stale tools (Claude Code, Codex, Copilot, VSCode Server) versions, skipping anything not installed.
 
 ### Docker Rootless
 

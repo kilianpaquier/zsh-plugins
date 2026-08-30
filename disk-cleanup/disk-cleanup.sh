@@ -1,15 +1,29 @@
 #!/bin/sh
 
+# zsh autoloads this file as a function, keep option and trap changes out of the caller's shell
+[ -z "$ZSH_VERSION" ] || setopt localoptions localtraps
+
 # shellcheck disable=SC3040
 (set -o pipefail >/dev/null 2>&1) && set -o pipefail
 
-trap 'unset -f error info command_targets target_probe dir_size target_size target_clean \
-  report_stale clean_stale \
-  claude_stale_dirs claude_report claude_clean \
-  codex_stale_dirs codex_report codex_clean \
-  vscode_stale_dirs vscode_report vscode_clean \
-  copilot_stale_dirs copilot_report copilot_clean \
-  help parse_arguments main' EXIT
+cleanup() {
+  unset -f error info command_targets target_probe dir_size target_size target_clean \
+    report_stale clean_stale \
+    claude_stale_dirs claude_report claude_clean \
+    codex_stale_dirs codex_report codex_clean \
+    vscode_stale_dirs vscode_report vscode_clean \
+    copilot_stale_dirs copilot_report copilot_clean \
+    usage parse_arguments main cleanup
+}
+trap cleanup EXIT
+
+# zsh aborts the function on Ctrl-C without running the EXIT trap
+if [ -n "$ZSH_VERSION" ]; then
+  TRAPINT() {
+    cleanup
+    return $((128 + $1))
+  }
+fi
 
 #####################################################################
 #
@@ -249,9 +263,10 @@ vscode_clean() {
 
 run=
 all=
+help=
 selected=
 
-help() {
+usage() {
   cat << 'EOF'
 Usage: disk-cleanup.sh [--run [--all | --<tool> ...]]
 
@@ -260,8 +275,6 @@ and from stale Copilot, Claude Code, Codex, VSCode Server version directories.
 Any tool not installed is skipped.
 
 No flags: dry-run, report every detected target and its size, clean nothing.
-
-Single-letter flags can be combined: -ar, -ra, -arh, etc.
 
 Options:
   -r, --run         Required to clean anything. Alone (no -a, --all or --<tool>), cleans nothing.
@@ -286,31 +299,23 @@ EOF
 }
 
 parse_arguments() {
-  for arg in "$@"; do
-    case "$arg" in
-    --run) run=1 ;;
-    --all) all=1 ;;
-    --help) help; return 1 ;;
+  while [ $# -gt 0 ]; do
+    case "$1" in
+    -r | --run) run=1; shift ;;
+    -a | --all) all=1; shift ;;
+    -h | --help) usage; help=1; return 0 ;;
     --bun|--docker|--go|--golangci-lint|--mise|--mvn|--npm|--pre-commit|--uv|--copilot|--claude|--codex|--vscode-server)
-      selected="$selected ${arg#--}"
+      selected="$selected ${1#--}"
+      shift
       ;;
-    # parse combined single letter arguments
-    -*)
-      case "$arg" in
-      *[!-arh]*) help; error "Unknown argument '$arg'."; return $? ;;
-      esac
-      case "$arg" in *h*) help; return 1 ;; esac
-      case "$arg" in *a*) all=1 ;; esac
-      case "$arg" in *r*) run=1 ;; esac
-      ;;
-    *) help; error "Unknown argument '$arg'."; return $? ;;
+    *) usage; error "Unknown argument '$1'."; return 2 ;;
     esac
   done
 
   if { [ -n "$selected" ] || [ -n "$all" ]; } && [ -z "$run" ]; then
-    help
+    usage
     error "Tool selection flags require '--run'."
-    return $?
+    return 2
   fi
 }
 
@@ -321,7 +326,8 @@ parse_arguments() {
 #####################################################################
 
 main() {
-  parse_arguments "$@" || return 1
+  parse_arguments "$@" || return $?
+  [ -z "$help" ] || return 0
 
   detected=""
   # word-split: command_targets prints one target per line
