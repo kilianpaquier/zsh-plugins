@@ -18,12 +18,12 @@ blue='\033[0;34m'
 no_color='\033[0m'
 
 error() {
-  printf "${red}ERROR - %s${no_color}\n" "$1" >&2
+  printf "${red}ERROR${no_color} %s\n" "$1" >&2
   return 1
 }
 
 info() {
-  printf "${blue}INFO - %s${no_color}\n" "$1"
+  printf "${blue}INFO${no_color} %s\n" "$1"
 }
 
 #####################################################################
