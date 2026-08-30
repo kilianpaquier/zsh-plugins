@@ -11,8 +11,8 @@ cleanup() {
     report_stale clean_stale \
     claude_stale_dirs claude_report claude_clean \
     codex_stale_dirs codex_report codex_clean \
-    vscode_stale_dirs vscode_report vscode_clean \
     copilot_stale_dirs copilot_report copilot_clean \
+    vscode_stale_dirs vscode_report vscode_clean \
     usage parse_arguments main cleanup
 }
 trap cleanup EXIT
@@ -225,7 +225,7 @@ copilot_clean() {
 
 #####################################################################
 #
-# VS Code Server: keep the running commit hash, drop the rest
+# VSCode Server: keep the running commit hash, drop the rest
 #
 #####################################################################
 
