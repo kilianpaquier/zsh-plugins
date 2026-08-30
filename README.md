@@ -104,7 +104,7 @@ git -C "$ZSH_CUSTOM/zsh-plugins" checkout v0.2.0
 
 ### Disk Cleanup
 
-This plugin adds a `disk-cleanup.sh` command that clears dev-tool caches
+This plugin adds a `disk-cleanup` command that clears dev-tool caches
 and stale tools (Claude Code, Codex, Copilot, VSCode Server) versions, skipping anything not installed.
 
 ### Docker Rootless
@@ -143,7 +143,7 @@ and then adds (only if it doesn't exist) mise completion file.
 
 ### Release Sync
 
-This plugin adds a `release-sync.sh` command to synchronize releases (artifacts included) between GitHub and GitLab repositories.
+This plugin adds a `release-sync` command to synchronize releases (artifacts included) between GitHub and GitLab repositories.
 For more information, use `release-sync --help` command.
 
 ### Task Completion

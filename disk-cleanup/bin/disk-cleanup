@@ -1,29 +1,9 @@
 #!/bin/sh
 
-# zsh autoloads this file as a function, keep option and trap changes out of the caller's shell
-[ -z "$ZSH_VERSION" ] || setopt localoptions localtraps
+set -e
 
 # shellcheck disable=SC3040
 (set -o pipefail >/dev/null 2>&1) && set -o pipefail
-
-cleanup() {
-  unset -f error info command_targets target_probe dir_size target_size target_clean \
-    report_stale clean_stale \
-    claude_stale_dirs claude_report claude_clean \
-    codex_stale_dirs codex_report codex_clean \
-    copilot_stale_dirs copilot_report copilot_clean \
-    vscode_stale_dirs vscode_report vscode_clean \
-    usage parse_arguments main cleanup
-}
-trap cleanup EXIT
-
-# zsh aborts the function on Ctrl-C without running the EXIT trap
-if [ -n "$ZSH_VERSION" ]; then
-  TRAPINT() {
-    cleanup
-    return $((128 + $1))
-  }
-fi
 
 #####################################################################
 #
@@ -268,7 +248,7 @@ selected=
 
 usage() {
   cat << 'EOF'
-Usage: disk-cleanup.sh [--run [--all | --<tool> ...]]
+Usage: disk-cleanup [--run [--all | --<tool> ...]]
 
 Reclaim disk space from dev-tool caches (bun, go, docker, uv, npm, pre-commit, golangci-lint, mise, mvn) via their own clean commands,
 and from stale Copilot, Claude Code, Codex, VSCode Server version directories.
