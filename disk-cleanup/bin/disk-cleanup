@@ -12,12 +12,17 @@ set -e
 #####################################################################
 
 red='\033[0;31m'
+yellow='\033[0;33m'
 blue='\033[0;34m'
 no_color='\033[0m'
 
 error() {
   printf "${red}ERROR${no_color} %s\n" "$1" >&2
   return 1
+}
+
+warn() {
+  printf "${yellow}WARN${no_color} %s\n" "$1"
 }
 
 info() {
@@ -30,30 +35,59 @@ info() {
 #
 #####################################################################
 
-claude_versions_dir="${XDG_DATA_HOME:-$HOME/.local/share}/claude/versions"
+cache_home="${XDG_CACHE_HOME:-$HOME/.cache}"
+data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+
+claude_dir="$data_home/claude"
+claude_versions_dir="$claude_dir/versions"
 codex_current_link="$HOME/.codex/packages/standalone/current"
 codex_releases_dir="$HOME/.codex/packages/standalone/releases"
-copilot_pkg_dir="${XDG_CACHE_HOME:-$HOME/.cache}/copilot/pkg"
+copilot_cache_dir="$cache_home/copilot"
+copilot_pkg_dir="$copilot_cache_dir/pkg"
 vscode_server_dir="$HOME/.vscode-server"
 
 bun_cache_dir="${BUN_INSTALL_CACHE_DIR:-$HOME/.bun/install/cache}"
-golangci_lint_cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/golangci-lint"
+docker_data_dir="$data_home/docker"
+goimports_cache_dir="$cache_home/goimports"
+golangci_lint_cache_dir="$cache_home/golangci-lint"
+gopls_cache_dir="$cache_home/gopls"
 maven_repository_dir="$HOME/.m2/repository"
-pre_commit_cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/pre-commit"
-uv_cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/uv"
+mise_data_dir="$data_home/mise"
+node_gyp_cache_dir="$cache_home/node-gyp"
+pre_commit_cache_dir="$cache_home/pre-commit"
+terraform_cache_dir="$cache_home/terraform"
+terraform_plugin_cache_dir="${TF_PLUGIN_CACHE_DIR:-$terraform_cache_dir/plugin-cache}"
+uv_cache_dir="$cache_home/uv"
 
-#####################################################################
-#
-# Command targets (tool exposes its own clean/prune command)
-#
-#####################################################################
+disk_warn="${DISK_CLEANUP_WARN_LEVEL:-80}"
 
-command_targets() {
-  printf '%s\n' bun docker go golangci-lint mise mvn npm pre-commit uv
+# Each lookup spawns the tool runtime (node, python), so resolve once and reuse.
+resolve_tool_dirs() {
+  if target_probe go; then
+    { read -r go_cache_dir; read -r go_mod_cache_dir; read -r go_path_dir; } <<EOF || true
+$(go env GOCACHE GOMODCACHE GOPATH 2>/dev/null)
+EOF
+  fi
+  target_probe mise && mise_cache_dir=$(mise cache path 2>/dev/null || true)
+  target_probe npm && npm_cache_dir=$(npm config get cache 2>/dev/null || true)
+  target_probe pip && pip_cache_dir=$(pip cache dir 2>/dev/null || true)
+  return 0
 }
 
-target_probe() {
-  command -v "$1" >/dev/null 2>&1
+#####################################################################
+#
+# Disk usage
+#
+#####################################################################
+
+disk_report() {
+  df -hP / "$HOME" 2>/dev/null | awk 'NR > 1 && !seen[$1]++ { print $6, $5 + 0, $4 }' | while read -r mount used free; do
+    if [ "$used" -ge "$disk_warn" ]; then
+      warn "disk: $mount ${used}% used, $free free"
+    else
+      info "disk: $mount ${used}% used, $free free"
+    fi
+  done || true
 }
 
 dir_size() {
@@ -64,48 +98,88 @@ dir_size() {
   du -sh "$1" 2>/dev/null | cut -f1
 }
 
+#####################################################################
+#
+# Targets
+#
+#####################################################################
+
+targets() {
+  printf '%s\n' bun docker go golangci-lint mise mvn npm pip pre-commit terraform uv claude codex copilot vscode
+}
+
+target_probe() {
+  case "$1" in
+  bun) [ -d "$bun_cache_dir" ] ;;
+  claude) [ -d "$claude_versions_dir" ] ;;
+  codex) [ -d "$codex_releases_dir" ] ;;
+  copilot) [ -d "$copilot_pkg_dir" ] ;;
+  mvn) [ -d "$maven_repository_dir" ] ;;
+  terraform) [ -d "$terraform_plugin_cache_dir" ] ;;
+  vscode) [ -d "$vscode_server_dir" ] ;;
+  *) command -v "$1" >/dev/null 2>&1 ;;
+  esac
+}
+
 target_size() {
   case "$1" in
   bun) dir_size "$bun_cache_dir" ;;
-  docker) docker system df --format '{{ .Type }}: {{ .Size }}' 2>/dev/null | awk -F': ' '{print tolower($1)": "$2}' | paste -sd ',' - | sed 's/,/, /g' ;;
-  go) printf 'build %s, mod %s' "$(dir_size "$(go env GOCACHE)")" "$(dir_size "$(go env GOMODCACHE)")" ;;
+  docker)
+    docker system df --format '{{ .Type }} {{ .Size }} ({{ .Reclaimable }} reclaimable)' 2>/dev/null | \
+      sed 's/^[A-Za-z ]*/\L&/; s/ ([0-9]*%)//' | \
+      paste -sd ',' - | \
+      sed 's/,/, /g' | \
+      grep . || printf 'daemon unreachable'
+    ;;
+  go)
+    printf 'build %s, mod %s, gopls %s, goimports %s' \
+      "$(dir_size "$go_cache_dir")" \
+      "$(dir_size "$go_mod_cache_dir")" \
+      "$(dir_size "$gopls_cache_dir")" \
+      "$(dir_size "$goimports_cache_dir")"
+    ;;
   golangci-lint) dir_size "$golangci_lint_cache_dir" ;;
-  mise) dir_size "$(mise cache path)" ;;
+  mise) dir_size "$mise_cache_dir" ;;
   mvn) dir_size "$maven_repository_dir" ;;
-  npm) dir_size "$(npm config get cache 2>/dev/null)" ;;
+  npm) printf 'cache %s, node-gyp %s' "$(dir_size "$npm_cache_dir")" "$(dir_size "$node_gyp_cache_dir")" ;;
+  pip) dir_size "$pip_cache_dir" ;;
   pre-commit) dir_size "$pre_commit_cache_dir" ;;
+  terraform) dir_size "$terraform_plugin_cache_dir" ;;
   uv) dir_size "$uv_cache_dir" ;;
   esac
 }
 
-target_clean() {
+stale_dirs() {
   case "$1" in
-  bun) rm -rf "$bun_cache_dir" ;;
-  docker)
-    docker builder prune -f --filter 'until=120h'
-    docker container prune -f --filter 'until=120h'
-    docker image prune -af --filter 'until=120h'
-    docker volume prune -f
-  ;;
-  go) go clean -cache -modcache ;;
-  golangci-lint) golangci-lint cache clean ;;
-  mise) mise cache clear && mise prune -y ;;
-  mvn) rm -rf "$maven_repository_dir" ;;
-  npm)
-    npm_cache=$(npm config get cache 2>/dev/null)
-    npm cache clean --force || return 1
-    [ -z "$npm_cache" ] || rm -rf "$npm_cache/_npx"
+  claude)
+    active=$(find "$claude_versions_dir" -mindepth 1 -maxdepth 1 -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+    [ -n "$active" ] || return 1
+    find "$claude_versions_dir" -mindepth 1 -maxdepth 1 -type f ! -path "$active"
     ;;
-  pre-commit) pre-commit clean ;;
-  uv) uv cache clean ;;
+  codex)
+    active=$(readlink -f "$codex_current_link" 2>/dev/null)
+    [ -n "$active" ] || return 1
+    find "$codex_releases_dir" -mindepth 1 -maxdepth 1 -type d ! -name "$(basename "$active")"
+    ;;
+  copilot)
+    active=$(find "$copilot_pkg_dir" -mindepth 2 -maxdepth 2 -type d -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+    [ -n "$active" ] || return 1
+    find "$copilot_pkg_dir" -mindepth 2 -maxdepth 2 -type d ! -path "$active"
+    ;;
+  vscode)
+    active=$(find "$vscode_server_dir" -maxdepth 1 -type f -name 'code-*' -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+    [ -n "$active" ] || return 1
+    hash=$(basename "$active" | sed 's/^code-//')
+    for dir in "$vscode_server_dir"/code-* "$vscode_server_dir"/cli/servers/Stable-*; do
+      [ -e "$dir" ] || continue
+      case "$dir" in
+      *"$hash") ;;
+      *) printf '%s\n' "$dir" ;;
+      esac
+    done
+    ;;
   esac
 }
-
-#####################################################################
-#
-# Tools stale management
-#
-#####################################################################
 
 report_stale() {
   label="$1"
@@ -113,126 +187,91 @@ report_stale() {
 
   if [ -z "$stale" ]; then
     info "$label: 0B"
-    return 1
+    return
   fi
 
-  echo "$stale" | while IFS= read -r dir; do
+  printf '%s\n' "$stale" | while IFS= read -r dir; do
     info "$label: $(dir_size "$dir") $dir"
   done
-  return 0
+}
+
+target_report() {
+  case "$1" in
+  claude | codex | copilot | vscode) report_stale "$1" "$(stale_dirs "$1")" ;;
+  *) info "$1: $(target_size "$1")" ;;
+  esac
 }
 
 clean_stale() {
   stale="$1"
   [ -n "$stale" ] || return 0
 
-  echo "$stale" | while IFS= read -r dir; do
+  printf '%s\n' "$stale" | while IFS= read -r dir; do
     rm -rf "$dir"
   done
 }
 
-#####################################################################
-#
-# Claude Code: keep the active version, drop the rest
-#
-#####################################################################
-
-claude_stale_dirs() {
-  [ -d "$claude_versions_dir" ] || return 1
-
-  active=$(find "$claude_versions_dir" -mindepth 1 -maxdepth 1 -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
-  [ -n "$active" ] || return 1
-
-  find "$claude_versions_dir" -mindepth 1 -maxdepth 1 -type f ! -path "$active"
-}
-
-claude_report() {
-  stale_claude=$(claude_stale_dirs) || return 1
-  report_stale claude-code "$stale_claude"
-}
-
-claude_clean() {
-  clean_stale "$stale_claude"
-}
-
-#####################################################################
-#
-# Codex: keep the active version, drop the rest
-#
-#####################################################################
-
-codex_stale_dirs() {
-  [ -d "$codex_releases_dir" ] || return 1
-
-  active=$(readlink -f "$codex_current_link" 2>/dev/null)
-  [ -n "$active" ] || return 1
-
-  find "$codex_releases_dir" -mindepth 1 -maxdepth 1 -type d ! -path "$active"
-}
-
-codex_report() {
-  stale_codex=$(codex_stale_dirs) || return 1
-  report_stale codex "$stale_codex"
-}
-
-codex_clean() {
-  clean_stale "$stale_codex"
-}
-
-#####################################################################
-#
-# Copilot: keep the active version, drop the rest
-#
-#####################################################################
-
-copilot_stale_dirs() {
-  [ -d "$copilot_pkg_dir" ] || return 1
-
-  active=$(find "$copilot_pkg_dir" -mindepth 2 -maxdepth 2 -type d -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
-  [ -n "$active" ] || return 1
-
-  find "$copilot_pkg_dir" -mindepth 2 -maxdepth 2 -type d ! -path "$active"
-}
-
-copilot_report() {
-  stale_copilot=$(copilot_stale_dirs) || return 1
-  report_stale copilot "$stale_copilot"
-}
-
-copilot_clean() {
-  clean_stale "$stale_copilot"
-}
-
-#####################################################################
-#
-# VSCode Server: keep the running commit hash, drop the rest
-#
-#####################################################################
-
-vscode_stale_dirs() {
-  [ -d "$vscode_server_dir" ] || return 1
-
-  active=$(find "$vscode_server_dir" -maxdepth 1 -type f -name 'code-*' -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
-  [ -n "$active" ] || return 1
-  hash=$(basename "$active" | sed 's/^code-//')
-
-  for dir in "$vscode_server_dir"/code-* "$vscode_server_dir"/cli/servers/Stable-*; do
-    [ -e "$dir" ] || continue
-    case "$dir" in
-    *"$hash") ;;
-    *) printf '%s\n' "$dir" ;;
-    esac
+empty_dir() {
+  for dir in "$@"; do
+    [ -d "$dir" ] || continue
+    find "$dir" -mindepth 1 -delete
   done
-  return 0
 }
 
-vscode_report() {
-  stale_vscode=$(vscode_stale_dirs) || return 1
-  report_stale vscode-server "$stale_vscode"
+target_clean() {
+  case "$1" in
+  bun) empty_dir "$bun_cache_dir" ;;
+  docker)
+    docker builder prune -f --filter 'until=120h' && \
+      docker container prune -f --filter 'until=120h' && \
+      docker image prune -af --filter 'until=120h' && \
+      docker volume prune -f
+    ;;
+  go) go clean -cache -modcache && empty_dir "$gopls_cache_dir" "$goimports_cache_dir" ;;
+  golangci-lint) golangci-lint cache clean ;;
+  mise) mise cache clear && mise prune -y ;;
+  mvn) empty_dir "$maven_repository_dir" ;;
+  npm) npm cache clean --force && empty_dir "$npm_cache_dir/_npx" "$node_gyp_cache_dir" ;;
+  pip) pip cache purge ;;
+  pre-commit) pre-commit clean ;;
+  terraform) empty_dir "$terraform_plugin_cache_dir" ;;
+  uv) uv cache clean ;;
+  claude | codex | copilot | vscode) clean_stale "$(stale_dirs "$1")" ;;
+  esac
 }
 
-vscode_clean() {
-  clean_stale "$stale_vscode"
+#####################################################################
+#
+# Uncovered directories (no target owns them)
+#
+#####################################################################
+
+covered_dirs() {
+  printf '%s\n' \
+    "$bun_cache_dir" \
+    "$claude_dir" \
+    "$copilot_cache_dir" \
+    "$docker_data_dir" \
+    "$go_cache_dir" \
+    "$go_path_dir" \
+    "$goimports_cache_dir" \
+    "$golangci_lint_cache_dir" \
+    "$gopls_cache_dir" \
+    "$mise_cache_dir" \
+    "$mise_data_dir" \
+    "$node_gyp_cache_dir" \
+    "$npm_cache_dir" \
+    "$pip_cache_dir" \
+    "$pre_commit_cache_dir" \
+    "$terraform_cache_dir" \
+    "$uv_cache_dir"
+}
+
+uncovered_report() {
+  covered_dirs | du -xsh --threshold=500M --exclude-from=- "$cache_home"/* "$data_home"/* 2>/dev/null | sort -rh \
+    | while IFS="$(printf '\t')" read -r size dir; do
+      info "uncovered: $size $dir"
+    done || true
 }
 
 #####################################################################
@@ -250,11 +289,12 @@ usage() {
   cat << 'EOF'
 Usage: disk-cleanup [--run [--all | --<tool> ...]]
 
-Reclaim disk space from dev-tool caches (bun, go, docker, uv, npm, pre-commit, golangci-lint, mise, mvn) via their own clean commands,
-and from stale Copilot, Claude Code, Codex, VSCode Server version directories.
+Reclaim disk space from dev-tool caches (bun, docker, go, golangci-lint, mise, mvn, npm, pip, pre-commit, terraform, uv) via their own clean commands,
+and from stale Claude Code, Codex, Copilot, VSCode Server version directories.
 Any tool not installed is skipped.
 
-No flags: dry-run, report every detected target and its size, clean nothing.
+Without flags, cleans nothing and reports filesystem usage (a warning once it reaches DISK_CLEANUP_WARN_LEVEL percent, default 80),
+the size of every detected target, and any directory above 500M under $XDG_CACHE_HOME or $XDG_DATA_HOME that no known target cleans.
 
 Options:
   -r, --run         Required to clean anything. Alone (no -a, --all or --<tool>), cleans nothing.
@@ -262,17 +302,19 @@ Options:
   -h, --help        Show this help.
   --bun             Cleans Bun install cache.
   --docker          Cleans build cache, containers, images, volumes older than 120h.
-  --go              Cleans build cache and module cache.
+  --go              Cleans build cache, module cache, gopls and goimports caches.
   --golangci-lint   Cleans golangci-lint cache.
   --mise            Cleans cache and unused tool versions.
   --mvn             Cleans local Maven repository.
-  --npm             Cleans npm cache and npx cache.
+  --npm             Cleans npm cache, npx cache and node-gyp cache.
+  --pip             Cleans pip cache.
   --pre-commit      Cleans pre-commit cache.
+  --terraform       Cleans Terraform plugin cache.
   --uv              Cleans uv cache.
   --claude          Cleans stale Claude Code versions.
   --codex           Cleans stale Codex releases.
   --copilot         Cleans stale Copilot package versions.
-  --vscode-server   Cleans stale VSCode Server versions.
+  --vscode          Cleans stale VSCode Server versions.
 
 --<tool> and --all select cleanup targets; they require --run and have no effect on the dry-run report.
 EOF
@@ -284,7 +326,7 @@ parse_arguments() {
     -r | --run) run=1; shift ;;
     -a | --all) all=1; shift ;;
     -h | --help) usage; help=1; return 0 ;;
-    --bun|--docker|--go|--golangci-lint|--mise|--mvn|--npm|--pre-commit|--uv|--copilot|--claude|--codex|--vscode-server)
+    --bun|--claude|--codex|--copilot|--docker|--go|--golangci-lint|--mise|--mvn|--npm|--pip|--pre-commit|--terraform|--uv|--vscode)
       selected="$selected ${1#--}"
       shift
       ;;
@@ -305,71 +347,41 @@ parse_arguments() {
 #
 #####################################################################
 
+required_gnu() {
+  "$1" --version 2>/dev/null | grep -q GNU || error "GNU $1 is required (coreutils/findutils). Please install it."
+}
+
 main() {
   parse_arguments "$@" || return $?
   [ -z "$help" ] || return 0
+  for cmd in du find sed sort; do required_gnu "$cmd" || return $?; done
+
+  resolve_tool_dirs
+  disk_report
 
   detected=""
-  # word-split: command_targets prints one target per line
-  for name in $(command_targets); do
-    target_probe "$name" || continue
-    info "$name: $(target_size "$name")"
-    detected="$detected $name"
+  for name in $(targets); do
+    target_probe "$name" && detected="$detected $name"
   done
 
-  has_claude=
-  claude_report && has_claude=1
-  has_codex=
-  codex_report && has_codex=1
-  has_copilot=
-  copilot_report && has_copilot=1
-  has_vscode=
-  vscode_report && has_vscode=1
+  for name in $detected; do
+    target_report "$name" &
+  done
+  uncovered_report &
+  wait
 
   [ -n "$run" ] || return 0
+  [ -z "$all" ] || selected="$detected"
 
-  clean_list=""
-  clean_copilot=
-  clean_claude=
-  clean_codex=
-  clean_vscode=
-
-  if [ -n "$all" ]; then
-    clean_list="$detected"
-    clean_claude="$has_claude"
-    clean_codex="$has_codex"
-    clean_copilot="$has_copilot"
-    clean_vscode="$has_vscode"
-  else
-    # word-split: $selected is a space-separated list built in parse_arguments
-    for name in $selected; do
-      case "$name" in
-      claude) clean_claude="$has_claude" ;;
-      codex) clean_codex="$has_codex" ;;
-      copilot) clean_copilot="$has_copilot" ;;
-      vscode-server) clean_vscode="$has_vscode" ;;
-      *) clean_list="$clean_list $name" ;;
-      esac
-    done
-  fi
-
-  # word-split: $clean_list is a space-separated list built above
-  for name in $clean_list; do
-    if target_clean "$name"; then info "$name: cleaned"; else error "$name: cleanup failed"; fi
+  failed=
+  for name in $selected; do
+    case " $detected " in
+    *" $name "*) ;;
+    *) info "$name: not detected, skipped"; continue ;;
+    esac
+    if target_clean "$name"; then info "$name: cleaned"; else error "$name: cleanup failed" || failed=1; fi
   done
-
-  if [ -n "$clean_claude" ]; then
-    if claude_clean; then info "claude-code: cleaned"; else error "claude-code: cleanup failed"; fi
-  fi
-  if [ -n "$clean_codex" ]; then
-    if codex_clean; then info "codex: cleaned"; else error "codex: cleanup failed"; fi
-  fi
-  if [ -n "$clean_copilot" ]; then
-    if copilot_clean; then info "copilot: cleaned"; else error "copilot: cleanup failed"; fi
-  fi
-  if [ -n "$clean_vscode" ]; then
-    if vscode_clean; then info "vscode-server: cleaned"; else error "vscode-server: cleanup failed"; fi
-  fi
+  [ -z "$failed" ]
 }
 
 main "$@"
