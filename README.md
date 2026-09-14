@@ -15,10 +15,11 @@
 - [Plugins](#plugins)
   - [Disk Cleanup](#disk-cleanup)
   - [Docker Rootless](#docker-rootless)
+  - [gitlab-ci-local completion](#gitlab-ci-local-completion)
   - [Highlight Styles](#highlight-styles)
   - [History](#history)
-  - [Just Completion](#just-completion)
-  - [Mise Completion](#mise-completion)
+  - [Just completion](#just-completion)
+  - [Mise completion](#mise-completion)
   - [Release Sync](#release-sync)
   - [Task Completion](#task-completion)
 
@@ -55,6 +56,7 @@ unset plugin plugins
 z4h init || return
 
 plugins=(
+  kilianpaquier/zsh-plugins/gitlab-ci-local-completion
   kilianpaquier/zsh-plugins/highlight-styles
   kilianpaquier/zsh-plugins/just-completion
   kilianpaquier/zsh-plugins/mise-completion
@@ -73,7 +75,7 @@ Clone the repository once, then symlink the wanted plugins into `$ZSH_CUSTOM/plu
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 
 git clone --branch v0.1.0 --depth 1 https://github.com/kilianpaquier/zsh-plugins.git "$ZSH_CUSTOM/zsh-plugins"
-for plugin in history highlight-styles just-completion mise-completion release-sync task-completion; do
+for plugin in history highlight-styles gitlab-ci-local-completion just-completion mise-completion release-sync task-completion; do
   ln -sfn "$ZSH_CUSTOM/zsh-plugins/$plugin" "$ZSH_CUSTOM/plugins/$plugin"
 done
 ```
@@ -84,6 +86,7 @@ done
 plugins=(
   history
   highlight-styles
+  gitlab-ci-local-completion
   just-completion
   mise-completion
   release-sync
@@ -118,6 +121,12 @@ It relies on a single file check to keep shell startup free of any command execu
 
 This plugin installs nothing, docker itself must be set up beforehand.
 
+### gitlab-ci-local completion
+
+This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
+and then adds (only if it doesn't exist) `gitlab-ci-local` completion file, generated once with `gitlab-ci-local --completion`
+instead of evaluating it on every shell startup.
+
 ### Highlight Styles
 
 Removes all `underline` styles from [**zsh-syntax-highlighting**](https://github.com/zsh-users/zsh-syntax-highlighting) since I don't really like it.
@@ -127,19 +136,17 @@ Removes all `underline` styles from [**zsh-syntax-highlighting**](https://github
 Sets zsh history options: extended timestamps, immediate write, sharing between sessions,
 and duplicate or blank filtering.
 
-### Just Completion
+### Just completion
 
 This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
 and then adds (only if it doesn't exist) `just` completion file, generated once with `just --completions zsh`
 instead of evaluating it on every shell startup.
 
-### Mise Completion
-
-Since mise plugin can install mise, it must be executed before the prompt is shown.
-As `mise completion zsh` can add latency to shell loading, this plugin is separated from installation one to avoid getting before prompt.
+### Mise completion
 
 This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
-and then adds (only if it doesn't exist) mise completion file.
+and then adds (only if it doesn't exist) `mise` completion file, generated once with `mise completion zsh`
+instead of evaluating it on every shell startup.
 
 ### Release Sync
 
