@@ -13,16 +13,16 @@
   - [With zsh4humans](#with-zsh4humans)
   - [With oh-my-zsh](#with-oh-my-zsh)
 - [Plugins](#plugins)
-  - [Chezmoi completion](#chezmoi-completion)
-  - [Disk cleanup](#disk-cleanup)
-  - [Docker rootless](#docker-rootless)
-  - [gitlab-ci-local completion](#gitlab-ci-local-completion)
-  - [Highlight styles](#highlight-styles)
-  - [History](#history)
-  - [Just completion](#just-completion)
-  - [Mise completion](#mise-completion)
-  - [Release sync](#release-sync)
-  - [Task completion](#task-completion)
+  - [chezmoi-completion](#chezmoi-completion)
+  - [disk-cleanup](#disk-cleanup)
+  - [docker-rootless](#docker-rootless)
+  - [gitlab-ci-local-completion](#gitlab-ci-local-completion)
+  - [highlight-styles](#highlight-styles)
+  - [history](#history)
+  - [just-completion](#just-completion)
+  - [mise-completion](#mise-completion)
+  - [release-sync](#release-sync)
+  - [task-completion](#task-completion)
 
 ## Install
 
@@ -100,18 +100,18 @@ git -C "$ZSH_CUSTOM/zsh-plugins" checkout v0.2.0
 
 ## Plugins
 
-### Chezmoi completion
+### chezmoi-completion
 
 This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
 and then adds (only if it doesn't exist) `chezmoi` completion file, generated once with `chezmoi completion zsh`
 instead of evaluating it on every shell startup.
 
-### Disk cleanup
+### disk-cleanup
 
 This plugin adds a `disk-cleanup` command that clears dev-tool caches
 and stale tools (Claude Code, Codex, Copilot, VSCode Server) versions, skipping anything not installed.
 
-### Docker rootless
+### docker-rootless
 
 Exports `DOCKER_HOST` to `unix://$XDG_RUNTIME_DIR/docker.sock` or `unix:///run/user/$UID/docker.sock`
 when a rootless docker installation is detected.
@@ -122,39 +122,39 @@ It relies on a single file check to keep shell startup free of any command execu
 
 This plugin installs nothing, docker itself must be set up beforehand.
 
-### gitlab-ci-local completion
+### gitlab-ci-local-completion
 
 This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
 and then adds (only if it doesn't exist) `gitlab-ci-local` completion file, generated once with `gitlab-ci-local --completion`
 instead of evaluating it on every shell startup.
 
-### Highlight styles
+### highlight-styles
 
 Removes all `underline` styles from [**zsh-syntax-highlighting**](https://github.com/zsh-users/zsh-syntax-highlighting) since I don't really like it.
 
-### History
+### history
 
 Sets zsh history options: extended timestamps, immediate write, sharing between sessions,
 and duplicate or blank filtering.
 
-### Just completion
+### just-completion
 
 This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
 and then adds (only if it doesn't exist) `just` completion file, generated once with `just --completions zsh`
 instead of evaluating it on every shell startup.
 
-### Mise completion
+### mise-completion
 
 This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
 and then adds (only if it doesn't exist) `mise` completion file, generated once with `mise completion zsh`
 instead of evaluating it on every shell startup.
 
-### Release sync
+### release-sync
 
 This plugin adds a `release-sync` command to synchronize releases (artifacts included) between GitHub and GitLab repositories.
 For more information, use `release-sync --help` command.
 
-### Task completion
+### task-completion
 
 This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
 and then adds (only if it doesn't exist) `task` completion file, generated once with `task --completion zsh`
