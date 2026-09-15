@@ -14,15 +14,15 @@
   - [With oh-my-zsh](#with-oh-my-zsh)
 - [Plugins](#plugins)
   - [Chezmoi completion](#chezmoi-completion)
-  - [Disk Cleanup](#disk-cleanup)
-  - [Docker Rootless](#docker-rootless)
+  - [Disk cleanup](#disk-cleanup)
+  - [Docker rootless](#docker-rootless)
   - [gitlab-ci-local completion](#gitlab-ci-local-completion)
-  - [Highlight Styles](#highlight-styles)
+  - [Highlight styles](#highlight-styles)
   - [History](#history)
   - [Just completion](#just-completion)
   - [Mise completion](#mise-completion)
-  - [Release Sync](#release-sync)
-  - [Task Completion](#task-completion)
+  - [Release sync](#release-sync)
+  - [Task completion](#task-completion)
 
 ## Install
 
@@ -106,12 +106,12 @@ This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/c
 and then adds (only if it doesn't exist) `chezmoi` completion file, generated once with `chezmoi completion zsh`
 instead of evaluating it on every shell startup.
 
-### Disk Cleanup
+### Disk cleanup
 
 This plugin adds a `disk-cleanup` command that clears dev-tool caches
 and stale tools (Claude Code, Codex, Copilot, VSCode Server) versions, skipping anything not installed.
 
-### Docker Rootless
+### Docker rootless
 
 Exports `DOCKER_HOST` to `unix://$XDG_RUNTIME_DIR/docker.sock` or `unix:///run/user/$UID/docker.sock`
 when a rootless docker installation is detected.
@@ -128,7 +128,7 @@ This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/c
 and then adds (only if it doesn't exist) `gitlab-ci-local` completion file, generated once with `gitlab-ci-local --completion`
 instead of evaluating it on every shell startup.
 
-### Highlight Styles
+### Highlight styles
 
 Removes all `underline` styles from [**zsh-syntax-highlighting**](https://github.com/zsh-users/zsh-syntax-highlighting) since I don't really like it.
 
@@ -149,12 +149,12 @@ This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/c
 and then adds (only if it doesn't exist) `mise` completion file, generated once with `mise completion zsh`
 instead of evaluating it on every shell startup.
 
-### Release Sync
+### Release sync
 
 This plugin adds a `release-sync` command to synchronize releases (artifacts included) between GitHub and GitLab repositories.
 For more information, use `release-sync --help` command.
 
-### Task Completion
+### Task completion
 
 This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
 and then adds (only if it doesn't exist) `task` completion file, generated once with `task --completion zsh`
