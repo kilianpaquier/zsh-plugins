@@ -13,6 +13,7 @@
   - [With zsh4humans](#with-zsh4humans)
   - [With oh-my-zsh](#with-oh-my-zsh)
 - [Plugins](#plugins)
+  - [Chezmoi completion](#chezmoi-completion)
   - [Disk Cleanup](#disk-cleanup)
   - [Docker Rootless](#docker-rootless)
   - [gitlab-ci-local completion](#gitlab-ci-local-completion)
@@ -42,7 +43,7 @@ Plugins loaded after are sourced asynchronously.
 # ~/.zshrc
 
 repos=(
-  kilianpaquier/zsh-plugins@v0.1.0
+  kilianpaquier/zsh-plugins
 )
 for repo in $repos; do z4h install "$repo" || return; done
 unset repo repos
@@ -55,13 +56,10 @@ unset plugin plugins
 
 z4h init || return
 
+# pick any plugins from the list below (see "Plugins" section)
 plugins=(
-  kilianpaquier/zsh-plugins/gitlab-ci-local-completion
   kilianpaquier/zsh-plugins/highlight-styles
-  kilianpaquier/zsh-plugins/just-completion
-  kilianpaquier/zsh-plugins/mise-completion
   kilianpaquier/zsh-plugins/release-sync
-  kilianpaquier/zsh-plugins/task-completion
 )
 for plugin in $plugins; do z4h load "$plugin"; done
 unset plugin plugins
@@ -74,8 +72,9 @@ Clone the repository once, then symlink the wanted plugins into `$ZSH_CUSTOM/plu
 ```sh
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 
-git clone --branch v0.1.0 --depth 1 https://github.com/kilianpaquier/zsh-plugins.git "$ZSH_CUSTOM/zsh-plugins"
-for plugin in history highlight-styles gitlab-ci-local-completion just-completion mise-completion release-sync task-completion; do
+git clone --depth 1 https://github.com/kilianpaquier/zsh-plugins.git "$ZSH_CUSTOM/zsh-plugins"
+# pick any plugins from the list below (see "Plugins" section)
+for plugin in history highlight-styles release-sync; do
   ln -sfn "$ZSH_CUSTOM/zsh-plugins/$plugin" "$ZSH_CUSTOM/plugins/$plugin"
 done
 ```
@@ -86,11 +85,7 @@ done
 plugins=(
   history
   highlight-styles
-  gitlab-ci-local-completion
-  just-completion
-  mise-completion
   release-sync
-  task-completion
 )
 
 source "$ZSH/oh-my-zsh.sh"
@@ -104,6 +99,12 @@ git -C "$ZSH_CUSTOM/zsh-plugins" checkout v0.2.0
 ```
 
 ## Plugins
+
+### Chezmoi completion
+
+This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
+and then adds (only if it doesn't exist) `chezmoi` completion file, generated once with `chezmoi completion zsh`
+instead of evaluating it on every shell startup.
 
 ### Disk Cleanup
 
