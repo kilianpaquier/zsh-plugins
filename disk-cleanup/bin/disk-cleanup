@@ -53,6 +53,7 @@ golangci_lint_cache_dir="$cache_home/golangci-lint"
 gopls_cache_dir="$cache_home/gopls"
 maven_repository_dir="$HOME/.m2/repository"
 mise_data_dir="$data_home/mise"
+nix_store_dir="/nix/store"
 node_gyp_cache_dir="$cache_home/node-gyp"
 podman_data_dir="$data_home/containers"
 pre_commit_cache_dir="$cache_home/pre-commit"
@@ -106,7 +107,7 @@ dir_size() {
 #####################################################################
 
 targets() {
-  printf '%s\n' bun docker go golangci-lint mise mvn npm pip podman pre-commit terraform uv claude codex copilot vscode
+  printf '%s\n' bun docker go golangci-lint mise mvn nix npm pip podman pre-commit terraform uv claude codex copilot vscode
 }
 
 target_probe() {
@@ -149,6 +150,7 @@ target_size() {
   golangci-lint) dir_size "$golangci_lint_cache_dir" ;;
   mise) dir_size "$mise_cache_dir" ;;
   mvn) dir_size "$maven_repository_dir" ;;
+  nix) dir_size "$nix_store_dir" ;;
   npm) printf 'cache %s, node-gyp %s' "$(dir_size "$npm_cache_dir")" "$(dir_size "$node_gyp_cache_dir")" ;;
   pip) dir_size "$pip_cache_dir" ;;
   pre-commit) dir_size "$pre_commit_cache_dir" ;;
@@ -239,6 +241,7 @@ target_clean() {
   golangci-lint) golangci-lint cache clean ;;
   mise) mise cache clear && mise prune -y ;;
   mvn) empty_dir "$maven_repository_dir" ;;
+  nix) nix-collect-garbage --quiet -d ;;
   npm) npm cache clean --force && empty_dir "$npm_cache_dir/_npx" "$node_gyp_cache_dir" ;;
   pip) pip cache purge ;;
   podman)
@@ -304,12 +307,13 @@ usage() {
   cat << 'EOF'
 Usage: disk-cleanup [--run [--all | --<tool> ...]]
 
-Reclaim disk space from dev-tool caches (bun, docker, go, golangci-lint, mise, mvn, npm, pip, podman, pre-commit, terraform, uv) via their own clean commands,
-and from stale Claude Code, Codex, Copilot, VSCode Server version directories.
-Any tool not installed is skipped.
+Reclaim disk space by deleting dev-tool caches via their own clean commands and stale tools version directories.
+Not installed tools are skipped during checks and run.
 
-Without flags, cleans nothing and reports filesystem usage (a warning once it reaches DISK_CLEANUP_WARN_LEVEL percent, default 80),
-the size of every detected target, and any directory above 500M under $XDG_CACHE_HOME or $XDG_DATA_HOME that no known target cleans.
+When no provided flags, it only report filesystem usage, size of every detected target
+and any directory above 500M under $XDG_CACHE_HOME or $XDG_DATA_HOME that no known target cleans.
+
+Use DISK_CLEANUP_WARN_LEVEL environment variable to be alerted of insufficient disk (default 80%).
 
 Options:
   -r, --run         Required to clean anything. Alone (no -a, --all or --<tool>), cleans nothing.
@@ -321,6 +325,7 @@ Options:
   --golangci-lint   Cleans golangci-lint cache.
   --mise            Cleans cache and unused tool versions.
   --mvn             Cleans local Maven repository.
+  --nix             Cleans old generations and unreachable Nix store paths.
   --npm             Cleans npm cache, npx cache and node-gyp cache.
   --pip             Cleans pip cache.
   --podman          Cleans build cache, containers, images, volumes older than 120h.
@@ -332,7 +337,7 @@ Options:
   --copilot         Cleans stale Copilot package versions.
   --vscode          Cleans stale VSCode Server versions.
 
---<tool> and --all select cleanup targets; they require --run and have no effect on the dry-run report.
+--<tool> and --all select cleanup targets, however they require --run to be applied and have no effect on the dry-run report.
 EOF
 }
 
@@ -342,7 +347,7 @@ parse_arguments() {
     -r | --run) run=1; shift ;;
     -a | --all) all=1; shift ;;
     -h | --help) usage; help=1; return 0 ;;
-    --bun|--claude|--codex|--copilot|--docker|--go|--golangci-lint|--mise|--mvn|--npm|--pip|--podman|--pre-commit|--terraform|--uv|--vscode)
+    --bun|--claude|--codex|--copilot|--docker|--go|--golangci-lint|--mise|--mvn|--nix|--npm|--pip|--podman|--pre-commit|--terraform|--uv|--vscode)
       selected="$selected ${1#--}"
       shift
       ;;
@@ -386,7 +391,7 @@ main() {
   uncovered_report &
   wait
 
-  [ -n "$run" ] || return 0
+  [ -n "$run" ] || { printf '\nRerun with --run --<tool> (or --all) to clean a listed target\n'; return 0; }
   [ -z "$all" ] || selected="$detected"
 
   failed=
