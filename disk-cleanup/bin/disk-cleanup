@@ -61,6 +61,7 @@ uv_cache_dir="$cache_home/uv"
 
 disk_warn="${DC_WARN_LEVEL:-80}"
 cache_threshold="${DC_CACHE_THRESHOLD:-500M}"
+oci_prune_age="${DC_OCI_PRUNE_AGE:-120h}"
 
 # Each lookup spawns the tool runtime (node, python), so resolve once and reuse.
 resolve_tool_dirs() {
@@ -231,9 +232,9 @@ target_clean() {
   case "$1" in
   bun) empty_dir "$bun_cache_dir" ;;
   docker)
-    docker builder prune -f --filter 'until=120h' && \
-      docker container prune -f --filter 'until=120h' && \
-      docker image prune -af --filter 'until=120h' && \
+    docker builder prune -f --filter "until=${oci_prune_age}" && \
+      docker container prune -f --filter "until=${oci_prune_age}" && \
+      docker image prune -af --filter "until=${oci_prune_age}" && \
       docker volume prune -f
     ;;
   go) go clean -cache -modcache && empty_dir "$gopls_cache_dir" "$goimports_cache_dir" ;;
@@ -244,9 +245,9 @@ target_clean() {
   npm) npm cache clean --force && empty_dir "$npm_cache_dir/_npx" "$node_gyp_cache_dir" ;;
   pip) pip cache purge ;;
   podman)
-    podman builder prune -f --filter 'until=120h' && \
-      podman container prune -f --filter 'until=120h' && \
-      podman image prune -af --filter 'until=120h' && \
+    podman builder prune -f --filter "until=${oci_prune_age}" && \
+      podman container prune -f --filter "until=${oci_prune_age}" && \
+      podman image prune -af --filter "until=${oci_prune_age}" && \
       podman volume prune -f
     ;;
   pre-commit) pre-commit clean ;;
@@ -313,7 +314,7 @@ selected=
 
 usage() {
   cat << 'EOF'
-Usage: disk-cleanup [-w <percent>] [-t <size>] [--run [--all | --<tool> ...]]
+Usage: disk-cleanup [-w <percent>] [-t <size>] [-p <duration>] [--run [--all | --<tool> ...]]
 
 Reclaim disk space by deleting dev-tool caches via their own clean commands and stale tools version directories.
 Not installed tools are skipped during checks and run.
@@ -323,30 +324,32 @@ and any directory above 500M under $XDG_CACHE_HOME, $XDG_DATA_HOME or /nix/store
 
 Use DC_WARN_LEVEL or -w to set the disk usage percent that triggers a warning (default 80%).
 Use DC_CACHE_THRESHOLD or -t to set the uncovered directory size floor (default 500M).
+Use DC_OCI_PRUNE_AGE or -p to set the OCI runtime prune age (e.g. docker, podman, default 120h).
 
 Options:
-  -r, --run                     Required to clean anything. Alone (no -a, --all or --<tool>), cleans nothing.
-  -a, --all                     With --run, clean every detected target.
-  -h, --help                    Show this help.
-  -w, --warn-level <percent>    Disk usage percent that triggers a warning. Overrides DC_WARN_LEVEL.
-  -t, --cache-threshold <size>  Uncovered directory size floor. Overrides DC_CACHE_THRESHOLD.
-  --bun                         Cleans Bun install cache.
-  --docker                      Cleans build cache, containers, images, volumes older than 120h.
-  --go                          Cleans build cache, module cache, gopls and goimports caches.
-  --golangci-lint               Cleans golangci-lint cache.
-  --mise                        Cleans cache and unused tool versions.
-  --mvn                         Cleans local Maven repository.
-  --nix                         Cleans old generations and unreachable Nix store paths.
-  --npm                         Cleans npm cache, npx cache and node-gyp cache.
-  --pip                         Cleans pip cache.
-  --podman                      Cleans build cache, containers, images, volumes older than 120h.
-  --pre-commit                  Cleans pre-commit cache.
-  --terraform                   Cleans Terraform plugin cache.
-  --uv                          Cleans uv cache.
-  --claude                      Cleans stale Claude Code versions.
-  --codex                       Cleans stale Codex releases.
-  --copilot                     Cleans stale Copilot package versions.
-  --vscode                      Cleans stale VSCode Server versions.
+  -r, --run                      Required to clean anything. Alone (no -a, --all or --<tool>), cleans nothing.
+  -a, --all                      With --run, clean every detected target.
+  -h, --help                     Show this help.
+  -w, --warn-level <percent>     Disk usage percent that triggers a warning. Overrides DC_WARN_LEVEL.
+  -t, --cache-threshold <size>   Uncovered directory size floor. Overrides DC_CACHE_THRESHOLD.
+  -p, --oci-prune-age <duration> OCI runtime (docker, podman, etc.) builder, container and image prune age. Overrides DC_OCI_PRUNE_AGE.
+  --bun                          Cleans Bun install cache.
+  --docker                       Cleans build cache, containers, images, volumes older than the prune age.
+  --go                           Cleans build cache, module cache, gopls and goimports caches.
+  --golangci-lint                Cleans golangci-lint cache.
+  --mise                         Cleans cache and unused tool versions.
+  --mvn                          Cleans local Maven repository.
+  --nix                          Cleans old generations and unreachable Nix store paths.
+  --npm                          Cleans npm cache, npx cache and node-gyp cache.
+  --pip                          Cleans pip cache.
+  --podman                       Cleans build cache, containers, images, volumes older than the prune age.
+  --pre-commit                   Cleans pre-commit cache.
+  --terraform                    Cleans Terraform plugin cache.
+  --uv                           Cleans uv cache.
+  --claude                       Cleans stale Claude Code versions.
+  --codex                        Cleans stale Codex releases.
+  --copilot                      Cleans stale Copilot package versions.
+  --vscode                       Cleans stale VSCode Server versions.
 
 --<tool> and --all select cleanup targets, however they require --run to be applied and have no effect on the dry-run report.
 EOF
@@ -362,6 +365,8 @@ parse_arguments() {
     -w | --warn-level) disk_warn="$2"; shift 2 ;;
     -t=* | --cache-threshold=*) cache_threshold="${1#*=}"; shift ;;
     -t | --cache-threshold) cache_threshold="$2"; shift 2 ;;
+    -p=* | --oci-prune-age=*) oci_prune_age="${1#*=}"; shift ;;
+    -p | --oci-prune-age) oci_prune_age="$2"; shift 2 ;;
     --bun|--claude|--codex|--copilot|--docker|--go|--golangci-lint|--mise|--mvn|--nix|--npm|--pip|--podman|--pre-commit|--terraform|--uv|--vscode)
       selected="$selected ${1#--}"
       shift
