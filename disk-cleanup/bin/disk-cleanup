@@ -277,6 +277,7 @@ covered_dirs() {
     "$gopls_cache_dir" \
     "$mise_cache_dir" \
     "$mise_data_dir" \
+    "$nix_store_dir/*" \
     "$node_gyp_cache_dir" \
     "$npm_cache_dir" \
     "$pip_cache_dir" \
@@ -287,10 +288,17 @@ covered_dirs() {
 }
 
 uncovered_report() {
-  covered_dirs | du -xsh --threshold="${cache_threshold}" --exclude-from=- "$cache_home"/* "$data_home"/* 2>/dev/null | sort -rh \
+  exclude_file=$(mktemp)
+  covered_dirs > "$exclude_file"
+
+  find "$cache_home" "$data_home" "$nix_store_dir" -mindepth 1 -maxdepth 1 -print0 2>/dev/null \
+    | xargs -0 du -xsh --threshold="${cache_threshold}" --exclude-from="$exclude_file" 2>/dev/null \
+    | sort -rh \
     | while IFS="$(printf '\t')" read -r size dir; do
       info "uncovered: $size $dir"
     done || true
+
+  rm -f "$exclude_file"
 }
 
 #####################################################################
@@ -312,7 +320,7 @@ Reclaim disk space by deleting dev-tool caches via their own clean commands and 
 Not installed tools are skipped during checks and run.
 
 When no provided flags, it only report filesystem usage, size of every detected target
-and any directory above 500M under $XDG_CACHE_HOME or $XDG_DATA_HOME that no known target cleans.
+and any directory above 500M under $XDG_CACHE_HOME, $XDG_DATA_HOME or /nix/store that no known target cleans.
 
 Use DC_WARN_LEVEL to set the disk usage percent that triggers a warning (default 80%).
 Use DC_CACHE_THRESHOLD to set the uncovered directory size floor (default 500M).
