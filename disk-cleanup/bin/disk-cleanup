@@ -265,31 +265,30 @@ target_clean() {
 #####################################################################
 
 covered_dirs() {
-  printf '%s\n' \
-    "$bun_cache_dir" \
-    "$claude_dir" \
-    "$copilot_cache_dir" \
-    "$docker_data_dir" \
-    "$go_cache_dir" \
-    "$go_path_dir" \
-    "$goimports_cache_dir" \
-    "$golangci_lint_cache_dir" \
-    "$gopls_cache_dir" \
-    "$mise_cache_dir" \
-    "$mise_data_dir" \
-    "$nix_store_dir/*" \
-    "$node_gyp_cache_dir" \
-    "$npm_cache_dir" \
-    "$pip_cache_dir" \
-    "$podman_data_dir" \
-    "$pre_commit_cache_dir" \
-    "$terraform_cache_dir" \
-    "$uv_cache_dir"
+  for name in $1; do
+    case "$name" in
+    bun) printf '%s\n' "$bun_cache_dir" ;;
+    claude) printf '%s\n' "$claude_dir" ;;
+    copilot) printf '%s\n' "$copilot_cache_dir" ;;
+    docker) printf '%s\n' "$docker_data_dir" ;;
+    go) printf '%s\n' "$go_cache_dir" "$go_mod_cache_dir" "$go_path_dir" "$goimports_cache_dir" "$gopls_cache_dir" ;;
+    golangci-lint) printf '%s\n' "$golangci_lint_cache_dir" ;;
+    mise) printf '%s\n' "$mise_cache_dir" "$mise_data_dir" ;;
+    mvn) printf '%s\n' "$maven_repository_dir" ;;
+    nix) printf '%s\n' "$nix_store_dir/*" ;;
+    npm) printf '%s\n' "$npm_cache_dir" "$node_gyp_cache_dir" ;;
+    pip) printf '%s\n' "$pip_cache_dir" ;;
+    podman) printf '%s\n' "$podman_data_dir" ;;
+    pre-commit) printf '%s\n' "$pre_commit_cache_dir" ;;
+    terraform) printf '%s\n' "$terraform_cache_dir" ;;
+    uv) printf '%s\n' "$uv_cache_dir" ;;
+    esac
+  done
 }
 
 uncovered_report() {
   exclude_file=$(mktemp)
-  covered_dirs > "$exclude_file"
+  covered_dirs "$1" > "$exclude_file"
 
   find "$cache_home" "$data_home" "$nix_store_dir" -mindepth 1 -maxdepth 1 -print0 2>/dev/null \
     | xargs -0 du -xsh --threshold="${cache_threshold}" --exclude-from="$exclude_file" 2>/dev/null \
@@ -404,7 +403,7 @@ main() {
   for name in $detected; do
     target_report "$name" &
   done
-  uncovered_report &
+  uncovered_report "$detected" &
   wait
 
   [ -n "$run" ] || { printf '\nRerun with --run --<tool> (or --all) to clean a listed target\n'; return 0; }
