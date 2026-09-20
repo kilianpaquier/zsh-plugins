@@ -359,7 +359,9 @@ parse_arguments() {
     -r | --run) run=1; shift ;;
     -a | --all) all=1; shift ;;
     -h | --help) usage; help=1; return 0 ;;
+    -w=* | --warn-level=*) disk_warn="${1#*=}"; shift ;;
     -w | --warn-level) disk_warn="$2"; shift 2 ;;
+    -t=* | --cache-threshold=*) cache_threshold="${1#*=}"; shift ;;
     -t | --cache-threshold) cache_threshold="$2"; shift 2 ;;
     --bun|--claude|--codex|--copilot|--docker|--go|--golangci-lint|--mise|--mvn|--nix|--npm|--pip|--podman|--pre-commit|--terraform|--uv|--vscode)
       selected="$selected ${1#--}"
