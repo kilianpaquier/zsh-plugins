@@ -38,12 +38,10 @@ info() {
 cache_home="${XDG_CACHE_HOME:-$HOME/.cache}"
 data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
 
-claude_dir="$data_home/claude"
-claude_versions_dir="$claude_dir/versions"
+claude_versions_dir="$data_home/claude/versions"
 codex_current_link="$HOME/.codex/packages/standalone/current"
 codex_releases_dir="$HOME/.codex/packages/standalone/releases"
-copilot_cache_dir="$cache_home/copilot"
-copilot_pkg_dir="$copilot_cache_dir/pkg"
+copilot_pkg_dir="$cache_home/copilot/pkg"
 vscode_server_dir="$HOME/.vscode-server"
 
 bun_cache_dir="${BUN_INSTALL_CACHE_DIR:-$HOME/.bun/install/cache}"
@@ -268,8 +266,9 @@ covered_dirs() {
   for name in $1; do
     case "$name" in
     bun) printf '%s\n' "$bun_cache_dir" ;;
-    claude) printf '%s\n' "$claude_dir" ;;
-    copilot) printf '%s\n' "$copilot_cache_dir" ;;
+    claude) printf '%s\n' "$claude_versions_dir" ;;
+    codex) printf '%s\n' "$codex_releases_dir" ;;
+    copilot) printf '%s\n' "$copilot_pkg_dir" ;;
     docker) printf '%s\n' "$docker_data_dir" ;;
     go) printf '%s\n' "$go_cache_dir" "$go_mod_cache_dir" "$go_path_dir" "$goimports_cache_dir" "$gopls_cache_dir" ;;
     golangci-lint) printf '%s\n' "$golangci_lint_cache_dir" ;;
@@ -282,6 +281,7 @@ covered_dirs() {
     pre-commit) printf '%s\n' "$pre_commit_cache_dir" ;;
     terraform) printf '%s\n' "$terraform_cache_dir" ;;
     uv) printf '%s\n' "$uv_cache_dir" ;;
+    vscode) printf '%s\n' "$vscode_server_dir" ;;
     esac
   done
 }
