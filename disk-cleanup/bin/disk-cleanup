@@ -61,7 +61,8 @@ terraform_cache_dir="$cache_home/terraform"
 terraform_plugin_cache_dir="${TF_PLUGIN_CACHE_DIR:-$terraform_cache_dir/plugin-cache}"
 uv_cache_dir="$cache_home/uv"
 
-disk_warn="${DISK_CLEANUP_WARN_LEVEL:-80}"
+disk_warn="${DC_WARN_LEVEL:-80}"
+cache_threshold="${DC_CACHE_THRESHOLD:-500M}"
 
 # Each lookup spawns the tool runtime (node, python), so resolve once and reuse.
 resolve_tool_dirs() {
@@ -286,7 +287,7 @@ covered_dirs() {
 }
 
 uncovered_report() {
-  covered_dirs | du -xsh --threshold=500M --exclude-from=- "$cache_home"/* "$data_home"/* 2>/dev/null | sort -rh \
+  covered_dirs | du -xsh --threshold="${cache_threshold}" --exclude-from=- "$cache_home"/* "$data_home"/* 2>/dev/null | sort -rh \
     | while IFS="$(printf '\t')" read -r size dir; do
       info "uncovered: $size $dir"
     done || true
@@ -313,7 +314,8 @@ Not installed tools are skipped during checks and run.
 When no provided flags, it only report filesystem usage, size of every detected target
 and any directory above 500M under $XDG_CACHE_HOME or $XDG_DATA_HOME that no known target cleans.
 
-Use DISK_CLEANUP_WARN_LEVEL environment variable to be alerted of insufficient disk (default 80%).
+Use DC_WARN_LEVEL to set the disk usage percent that triggers a warning (default 80%).
+Use DC_CACHE_THRESHOLD to set the uncovered directory size floor (default 500M).
 
 Options:
   -r, --run         Required to clean anything. Alone (no -a, --all or --<tool>), cleans nothing.
