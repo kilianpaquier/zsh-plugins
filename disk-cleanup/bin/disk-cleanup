@@ -392,14 +392,17 @@ parse_arguments() {
 #
 #####################################################################
 
-required_gnu() {
-  "$1" --version 2>/dev/null | grep -q GNU || error "GNU $1 is required (coreutils/findutils). Please install it."
+required_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    error "Required command '$1' is required but wasn't found. Please install it."
+    return 1
+  fi
 }
 
 main() {
   parse_arguments "$@" || return $?
   [ -z "$help" ] || return 0
-  for cmd in du find sed sort; do required_gnu "$cmd" || return $?; done
+  for cmd in du find sed sort; do required_command "$cmd" || return $?; done
 
   resolve_tool_dirs
   disk_report
