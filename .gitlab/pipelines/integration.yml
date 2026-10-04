@@ -13,5 +13,25 @@ include:
   # https://gitlab.com/to-be-continuous/bash
   - remote: https://gitlab.com/to-be-continuous/bash/-/raw/25e0ab61ffadef08b7cda4032afbaa859aebc280/templates/gitlab-ci-bash.yml # 3.10.0
     inputs:
-      bats-enabled: "false"
+      bats-enabled: false
       shellcheck-files: "**/*.*sh"
+
+  # Plumber template
+  # https://gitlab.com/getplumber/plumber
+  - remote: https://gitlab.com/getplumber/plumber/-/raw/c342d11f758f4386d9d2c42333cd1c4ae2d5448a/templates/plumber.yml # v0.5.16
+    inputs:
+      allow_failure: true
+      badge: false
+      config_file: .gitlab/plumber.yml
+      gitlab_token: $PLUMBER_GITLAB_TOKEN
+      image: $PLUMBER_IMAGE
+      mr_comment: false
+      score_point: true
+      score_push: true
+
+bash-shellcheck:
+  needs: []
+
+plumber:
+  rules:
+    - if: '$CI_COMMIT_REF_NAME =~ $INTEG_REF || $CI_COMMIT_REF_NAME =~ $PROD_REF'
