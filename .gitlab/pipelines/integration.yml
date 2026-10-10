@@ -18,7 +18,7 @@ include:
 
   # Plumber template
   # https://gitlab.com/getplumber/plumber
-  - remote: https://gitlab.com/getplumber/plumber/-/raw/c342d11f758f4386d9d2c42333cd1c4ae2d5448a/templates/plumber.yml # v0.5.16
+  - remote: https://gitlab.com/getplumber/plumber/-/raw/0d7b3e8597bac0d31c30751c9fe84b781a7ce837/templates/plumber.yml # v0.5.20
     inputs:
       allow_failure: true
       badge: false

@@ -10,9 +10,9 @@ variables:
 
   TRIVY_SEVERITY: MEDIUM,HIGH,CRITICAL
 
-  SEMREL_IMAGE: docker.io/library/node:26.10.0-alpine3.23@sha256:c3c6e314fd42e41962360b2482fc18d150beb47976c3aa7b8b9689d7ef42a5c2
+  SEMREL_IMAGE: docker.io/library/node:26.11.1-alpine3.23@sha256:f1394b3ffc021bc3f4aaf363e70a8d9667f7a9a63538bc824d7cc583129fffad
   BASH_BATS_IMAGE: docker.io/bats/bats:1.14.0@sha256:5322b877351fda0cc435de8c6116de7d0a2ec79d7c680132a0ef329a633bc66f
   BASH_SHELLCHECK_IMAGE: docker.io/koalaman/shellcheck-alpine:v0.11.0@sha256:9955be09ea7f0dbf7ae942ac1f2094355bb30d96fffba0ec09f5432207544002
-  KICKR_IMAGE: ghcr.io/jdx/mise:2026.10.0@sha256:5253aad873240675097e6229786dff87d54a9ac9d52917e42903de37511f74b3
-  PLUMBER_IMAGE: docker.io/getplumber/plumber:0.5.16@sha256:cdf0874835facb94da6cf59254c6219ecaefcd5bcac64b0d4e73bcb0091b0b09
-  PRE_COMMIT_IMAGE: docker.io/library/python:3.14.7-alpine3.23@sha256:6b8f06d04d5305c1d1288435388df9165ab41e681fae6439d6349d8053cc3f83
+  KICKR_IMAGE: ghcr.io/jdx/mise:2026.10.7@sha256:66d03744d53f7da73eb3065b166151d48314c652985bdc420881376a4458aa67
+  PLUMBER_IMAGE: docker.io/getplumber/plumber:0.5.20@sha256:1154cac2073d49cd313f6245bc4e25a4df7636194f39e8093da80376017f4988
+  PRE_COMMIT_IMAGE: docker.io/library/python:3.14.8-alpine3.23@sha256:e7cff362a12454395f8dc99607c21a602ea880cdce03538877b90c2ba932b16f
