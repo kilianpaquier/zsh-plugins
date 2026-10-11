@@ -199,7 +199,7 @@ gitlab:
       # printingMergeRequestLinkEnabled: true
       removeSourceBranchAfterMerge: true
 
-    ## Requires the project to link a security policy project, optionally a specific one (the ID wins if both are set).
+    # Requires the project to link a security policy project, optionally a specific one (the ID wins if both are set).
     # Ultimate only (fires on lower tiers).
     projectMustHaveSecurityPolicySource:
       enabled: false
