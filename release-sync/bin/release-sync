@@ -81,6 +81,11 @@ sync_release() {
     return 0
   fi
 
+  release_data=$("$source_platform" release "$source_repository" "$release") || {
+    error "Failed to retrieve release '$release' from '$source_platform'"
+    return 1
+  }
+
   info "Synchronizing '$release' on '$target_platform'"
 
   assets="$tmpdir/$release"
@@ -91,10 +96,11 @@ sync_release() {
   }
   rm -f "$assets/"*"$release"* # remove potential archive assets
 
-  release_data=$("$source_platform" release "$source_repository" "$release") || {
-    error "Failed to retrieve release '$release' from '$source_platform'"
-    return 1
-  }
+  if [ -n "$dry_run" ]; then
+    info "Skipping '$release' creation (dry run)"
+    return 0
+  fi
+
   "$target_platform" create "$target_repository" "$release" "$assets" \
     "$(printf '%s' "$release_data" | jq -r '.name')" \
     "$(printf '%s' "$release_data" | jq -r '.body')" \
@@ -107,6 +113,10 @@ sync_release() {
 #
 #####################################################################
 
+dry_run=
+help=
+source_spec=
+target_spec=
 source_platform=
 target_platform=
 source_repository=
@@ -123,7 +133,7 @@ validate_platform() {
 
 usage() {
   cat << 'EOF'
-Usage: release-sync <source> <target> [version]
+Usage: release-sync [-h] [-n] <source> <target> [version]
 
 Synchronize releases from a source platform to a target platform.
 
@@ -153,6 +163,13 @@ Examples:
   # Sync a specific version
   release-sync github:owner/repo gitlab:group/project v1.0.0
 
+  # Preview a sync from GitHub to GitLab
+  release-sync --dry-run github gitlab
+
+Options:
+  -n, --dry-run  Run everything except the release creation, then show what would be created.
+  -h, --help     Show this help.
+
 Requirements:
   - 'gh' command (GitHub CLI) for GitHub operations
   - 'glab' command (GitLab CLI) for GitLab operations
@@ -162,28 +179,43 @@ EOF
 }
 
 parse_arguments() {
-  [ $# -ge 2 ] || {
+  while [ $# -gt 0 ]; do
+    case "$1" in
+    -n | --dry-run) dry_run=1; shift ;;
+    -h | --help) usage; help=1; return 0 ;;
+    -*) usage; error "Unknown argument '$1'."; return 2 ;;
+    *)
+      if [ -z "$source_spec" ]; then
+        source_spec=$1
+      elif [ -z "$target_spec" ]; then
+        target_spec=$1
+      elif [ -z "$version" ]; then
+        version=$1
+      else
+        usage
+        error "Too many arguments."
+        return 2
+      fi
+      shift
+      ;;
+    esac
+  done
+
+  [ -n "$target_spec" ] || {
     usage
     error "Missing required arguments."
     return 2
   }
-  [ $# -le 3 ] || {
-    usage
-    error "Too many arguments."
-    return 2
-  }
 
-  source_platform=${1%%:*}
-  case "$1" in
-  *:*) source_repository=${1#*:} ;;
+  source_platform=${source_spec%%:*}
+  case "$source_spec" in
+  *:*) source_repository=${source_spec#*:} ;;
   esac
 
-  target_platform=${2%%:*}
-  case "$2" in
-  *:*) target_repository=${2#*:} ;;
+  target_platform=${target_spec%%:*}
+  case "$target_spec" in
+  *:*) target_repository=${target_spec#*:} ;;
   esac
-
-  version=${3:-}
 
   validate_platform "$source_platform" || return $?
   validate_platform "$target_platform" || return $?
@@ -213,6 +245,7 @@ required_command() {
 
 main() {
   parse_arguments "$@" || return $?
+  [ -z "$help" ] || return 0
   for cmd in mktemp jq; do required_command "$cmd" || return $?; done
 
   if [ -z "$source_repository" ]; then
@@ -230,6 +263,7 @@ main() {
   tmpdir=$(mktemp -d)
 
   info "Starting synchronization from '$source_platform' to '$target_platform'"
+  [ -z "$dry_run" ] || info "Nothing will be created (dry run)"
 
   if [ -n "$version" ]; then
     sync_release "$version"
