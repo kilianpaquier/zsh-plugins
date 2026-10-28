@@ -5,7 +5,7 @@ include:
 
   # pre-commit template
   # https://gitlab.com/to-be-continuous/pre-commit
-  - remote: https://gitlab.com/to-be-continuous/pre-commit/-/raw/545565bb99ba3b932c9f1f244d446d5ff3f77b40/templates/gitlab-ci-pre-commit.yml # 1.6.0
+  - remote: https://gitlab.com/to-be-continuous/pre-commit/-/raw/50e22ece81358c673c8d33b79185d5563bdc1d39/templates/gitlab-ci-pre-commit.yml # 1.8.0
     inputs:
       pre-commit-file: .pre-commit-config.yaml
 
@@ -18,7 +18,7 @@ include:
 
   # Plumber template
   # https://gitlab.com/getplumber/plumber
-  - remote: https://gitlab.com/getplumber/plumber/-/raw/0d7b3e8597bac0d31c30751c9fe84b781a7ce837/templates/plumber.yml # v0.5.20
+  - remote: https://gitlab.com/getplumber/plumber/-/raw/5f5d5d335b3bf1fd872d7489ebb1f4f591092958/templates/plumber.yml # v0.7.4
     inputs:
       allow_failure: true
       badge: false
