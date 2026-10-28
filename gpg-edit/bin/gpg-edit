@@ -36,6 +36,14 @@ info() {
 #
 #####################################################################
 
+# Prints the starting content of a new file.
+# Uses '<name>.example.<ext>' next to the file when present, otherwise a built-in example for the extension.
+#
+# Globals:
+#   file, name, ext
+#
+# Outputs:
+#   The content on stdout.
 write_template() {
   example="$(dirname "$file")/${name%.*}.example.$ext"
   if [ -n "$ext" ] && [ -f "$example" ]; then
@@ -73,6 +81,13 @@ EOF
   esac
 }
 
+# Fills the plaintext file from the encrypted file, or from write_template when the file is missing.
+#
+# Globals:
+#   file, plaintext
+#
+# Returns:
+#   1 when gpg can't decrypt the file.
 decrypt() {
   if [ ! -e "$file" ]; then
     info "'$file' doesn't exist, starting from an example."
@@ -86,6 +101,13 @@ decrypt() {
   }
 }
 
+# Encrypts the plaintext into the temporary ciphertext, then moves it over the file.
+#
+# Globals:
+#   file, plaintext, ciphertext
+#
+# Returns:
+#   1 when encryption or the move fails, the file is then left untouched.
 encrypt() {
   gpg --quiet --yes --symmetric --cipher-algo AES256 --armor --output "$ciphertext" "$plaintext" || {
     error "Failed to encrypt '$file', left untouched."
@@ -104,18 +126,34 @@ encrypt() {
 #
 #####################################################################
 
+# Opens the plaintext in $VISUAL, $EDITOR or vi.
+#
+# Globals:
+#   plaintext, VISUAL, EDITOR
+#
+# Returns:
+#   The editor exit status.
 run_editor() {
   # Deliberate word splitting, so an editor with arguments like 'code --wait' works.
   # shellcheck disable=SC2086
   set -- ${VISUAL:-${EDITOR:-vi}}
 
   case "$(basename "$1")" in
+  # Keeps swap, viminfo, shada, backup and undo files from copying plaintext elsewhere.
   vim | nvim) set -- "$@" -n -i NONE --cmd 'set nobackup nowritebackup noundofile' ;;
   esac
 
   "$@" "$plaintext"
 }
 
+# Checks JSON with jq and YAML with yq.
+# A missing checker or another extension accepts the content.
+#
+# Globals:
+#   ext, plaintext
+#
+# Returns:
+#   Non-zero when the content is invalid.
 validate() {
   case "$ext" in
   json) ! command -v jq >/dev/null 2>&1 || jq empty "$plaintext" ;;
@@ -123,6 +161,16 @@ validate() {
   esac
 }
 
+# Asks a yes/no question on the terminal, yes by default.
+#
+# Arguments:
+#   Question to ask.
+#
+# Outputs:
+#   The question on stderr.
+#
+# Returns:
+#   1 on a no answer or when no terminal is available.
 confirm() {
   printf '%s [Y/n] ' "$1" >&2
   read -r answer 2> /dev/null < /dev/tty || return 1
@@ -131,6 +179,10 @@ confirm() {
   esac
 }
 
+# Runs the editor until the content is valid or the user gives up.
+#
+# Returns:
+#   1 when the editor fails or the user declines to re-open it.
 edit_loop() {
   while :; do
     run_editor || {
@@ -182,6 +234,13 @@ Requirements:
 EOF
 }
 
+# Parses the CLI arguments and derives the inner file name and extension.
+#
+# Globals:
+#   file, help, name, ext (set)
+#
+# Returns:
+#   2 on invalid arguments.
 parse_arguments() {
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -239,17 +298,20 @@ required_command() {
   fi
 }
 
+# Decrypts, edits and encrypts back the file.
 main() {
   parse_arguments "$@" || return $?
   [ -z "$help" ] || return 0
   for cmd in cksum gpg mktemp; do required_command "$cmd" || return $?; done
 
+  # Pinentry needs the terminal device to prompt for the passphrase.
   if [ -z "${GPG_TTY:-}" ] && [ -t 0 ]; then
     GPG_TTY=$(tty)
     export GPG_TTY
   fi
 
   [ -n "${XDG_RUNTIME_DIR:-}" ] || warn "XDG_RUNTIME_DIR is unset, plaintext goes to '${TMPDIR:-/tmp}' which may be disk-backed."
+  # Keeps the decrypted file readable by the current user only.
   umask 077
   tmpdir=$(mktemp -d "${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}/gpg-edit.XXXXXX")
   plaintext="$tmpdir/$name"

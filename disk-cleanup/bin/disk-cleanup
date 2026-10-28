@@ -44,6 +44,14 @@ has() {
 done_marker=$(printf '\001')
 clear_bar=$(printf '\r\033[K\033[A')
 
+# Forwards report lines from stdin and draws a progress bar below them.
+# A line starting with done_marker marks a job as done instead of being printed.
+#
+# Arguments:
+#   Space-separated job names.
+#
+# Outputs:
+#   Report lines on stdout, the bar on stderr when it is a terminal.
 progress() {
   pending=" "
   total=0
@@ -109,10 +117,18 @@ empty_dir() {
   done
 }
 
+# Prints the most recently modified path among the find matches.
+#
+# Arguments:
+#   find paths and predicates.
 newest() {
   find "$@" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-
 }
 
+# Logs each stale path with its size, or 0B when there is none.
+#
+# Arguments:
+#   Label, then newline-separated paths.
 report_stale() {
   label="$1"
   stale="$2"
@@ -136,6 +152,13 @@ clean_stale() {
   done
 }
 
+# Prints a one-line disk usage summary of a container runtime.
+#
+# Arguments:
+#   Runtime command, docker or podman.
+#
+# Outputs:
+#   The summary, or 'daemon unreachable', on stdout.
 oci_size() {
   "$1" system df --format '{{ .Type }} {{ .Size }} ({{ .Reclaimable }} reclaimable)' 2>/dev/null | \
     sed 's/^[A-Za-z ]*/\L&/; s/ ([0-9]*%)//' | \
@@ -144,6 +167,13 @@ oci_size() {
     grep . || printf 'daemon unreachable'
 }
 
+# Prunes a container runtime build cache, containers and images older than oci_prune_age, and unused volumes.
+#
+# Globals:
+#   oci_prune_age
+#
+# Arguments:
+#   Runtime command, docker or podman.
 oci_clean() {
   "$1" builder prune -f --filter "until=${oci_prune_age}" && \
     "$1" container prune -f --filter "until=${oci_prune_age}" && \
@@ -169,8 +199,12 @@ is_target() {
   targets | grep -qx -- "$1"
 }
 
-# Runs one action of a target: probe, resolve, report, clean, dirs, and stale for version-pruned tools.
+# Runs one action of a target through its target_<name> function.
+# Actions are probe, resolve, report, clean, dirs, and stale for version-pruned tools.
 # A target ignores an action it doesn't handle.
+#
+# Arguments:
+#   Target name, then action.
 target() {
   fn="target_$(printf '%s' "$1" | tr - _)"
   shift
@@ -282,6 +316,7 @@ target_go() {
   case "$1" in
   probe) has go ;;
   resolve)
+    # A heredoc, not a pipe, so read sets the variables in this shell.
     { read -r go_cache_dir; read -r go_mod_cache_dir; read -r go_path_dir; } << EOF || true
 $(go env GOCACHE GOMODCACHE GOPATH 2>/dev/null)
 EOF
@@ -481,6 +516,10 @@ target_vscode() {
 #
 #####################################################################
 
+# Logs / and $HOME filesystem usage, as a warning above disk_warn.
+#
+# Globals:
+#   disk_warn
 disk_report() {
   df -hP / "$HOME" 2>/dev/null | awk 'NR > 1 && !seen[$1]++ { print $6, $5 + 0, $4 }' | while read -r mount used free; do
     if [ "$used" -ge "$disk_warn" ]; then
@@ -491,7 +530,13 @@ disk_report() {
   done || true
 }
 
-# Directories above the threshold that no detected target owns.
+# Logs directories above cache_threshold that no detected target owns.
+#
+# Globals:
+#   exclude_file, cache_threshold
+#
+# Arguments:
+#   Space-separated detected targets.
 uncovered_report() {
   for covered in $1; do target "$covered" dirs; done > "$exclude_file"
 
@@ -503,6 +548,13 @@ uncovered_report() {
     done || true
 }
 
+# Runs every target report, and the uncovered scan unless fast, in parallel behind the progress bar.
+#
+# Globals:
+#   fast
+#
+# Arguments:
+#   Space-separated detected targets.
 report_targets() {
   jobs="$1"
   [ -n "$fast" ] || jobs="$jobs uncovered"
@@ -581,6 +633,13 @@ Tools:
   --codex          Old Codex releases.
   --copilot        Old Copilot package versions.
   --vscode         Old VSCode Server versions.
+
+Requirements:
+  - 'du' command for directory sizes
+  - 'find' command to list and delete directories
+  - 'sed' command for output formatting
+  - 'sort' command to order directories by size
+  - Each tool's own CLI to clean it, a tool not installed is skipped
 EOF
 }
 
@@ -592,6 +651,13 @@ value_required() {
   }
 }
 
+# Parses the CLI arguments into run mode, settings and selected targets.
+#
+# Globals:
+#   run, all, fast, help, selected, disk_warn, cache_threshold, oci_prune_age (set)
+#
+# Returns:
+#   2 on invalid arguments.
 parse_arguments() {
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -647,12 +713,23 @@ required_command() {
   fi
 }
 
+# Prints the targets installed on this machine.
+#
+# Outputs:
+#   Space-separated names on stdout.
 detect_targets() {
   for name in $(targets); do
     if target "$name" probe; then printf ' %s' "$name"; fi
   done
 }
 
+# Cleans the selected targets, skipping those not detected.
+#
+# Arguments:
+#   Space-separated detected targets, then space-separated selected targets.
+#
+# Returns:
+#   1 when any cleanup failed.
 clean_targets() {
   detected="$1"
   failed=
@@ -666,6 +743,7 @@ clean_targets() {
   [ -z "$failed" ]
 }
 
+# Reports disk usage and target sizes, then cleans the selected targets with --run.
 main() {
   parse_arguments "$@" || return $?
   [ -z "$help" ] || return 0

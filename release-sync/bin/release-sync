@@ -31,17 +31,21 @@ info() {
 #
 #####################################################################
 
-# Each platform function runs one action:
-#   - repository                                         prints the current directory repository
-#   - releases <repo>                                    prints release tags, oldest first
-#   - release <repo> <tag>                               prints the release as {name, body, date}
-#   - download <repo> <tag> <dir>                        downloads the release assets into dir
-#   - create <repo> <tag> <dir> <title> <notes> <date>   creates the release with dir assets
-
 urlencode() {
   printf '%s' "$1" | jq -sRr @uri
 }
 
+# Runs one action on GitHub. gitlab() takes the same actions on GitLab.
+#
+# Arguments:
+#   repository                                         prints the current directory repository
+#   releases <repo>                                    prints release tags, oldest first
+#   release <repo> <tag>                               prints the release as {name, body, date}
+#   download <repo> <tag> <dir>                        downloads the release assets into dir
+#   create <repo> <tag> <dir> <title> <notes> <date>   creates the release with dir assets
+#
+# Outputs:
+#   The action result on stdout.
 github() {
   action=$1
   shift
@@ -54,6 +58,7 @@ github() {
   esac
 }
 
+# Runs one action on GitLab. See github() for the actions.
 gitlab() {
   action=$1
   shift
@@ -73,6 +78,17 @@ gitlab() {
 #
 #####################################################################
 
+# Copies one release, with its title, notes, date and assets, from the source to the target platform.
+# Skips a release already on the target, and stops before creation in dry run.
+#
+# Globals:
+#   source_*, target_*, tmpdir, dry_run
+#
+# Arguments:
+#   Release tag.
+#
+# Returns:
+#   1 when the release can't be read or downloaded.
 sync_release() {
   release=$1
 
@@ -123,6 +139,13 @@ source_repository=
 target_repository=
 version=
 
+# Checks the platform name and that its CLI is installed.
+#
+# Arguments:
+#   Platform name.
+#
+# Returns:
+#   2 on an unknown platform, 1 when its CLI is missing.
 validate_platform() {
   case "$1" in
   github) required_command gh ;;
@@ -178,6 +201,13 @@ Requirements:
 EOF
 }
 
+# Parses the CLI arguments into platforms, repositories and version.
+#
+# Globals:
+#   dry_run, help, source_*, target_*, version (set)
+#
+# Returns:
+#   2 on invalid arguments.
 parse_arguments() {
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -243,6 +273,7 @@ required_command() {
   fi
 }
 
+# Synchronizes the given version, or every source release oldest first.
 main() {
   parse_arguments "$@" || return $?
   [ -z "$help" ] || return 0
