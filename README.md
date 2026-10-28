@@ -21,6 +21,7 @@
   - [disk-cleanup](#disk-cleanup)
   - [docker-rootless](#docker-rootless)
   - [gitlab-ci-local-completion](#gitlab-ci-local-completion)
+  - [gpg-edit](#gpg-edit)
   - [highlight-styles](#highlight-styles)
   - [history](#history)
   - [just-completion](#just-completion)
@@ -115,6 +116,8 @@ instead of evaluating it on every shell startup.
 This plugin adds a `disk-cleanup` command that clears dev-tool caches
 and stale tools (Claude Code, Codex, Copilot, VSCode Server) versions, skipping anything not installed.
 
+For more information, use `disk-cleanup --help` command.
+
 ### docker-rootless
 
 Exports `DOCKER_HOST` to `unix://$XDG_RUNTIME_DIR/docker.sock` or `unix:///run/user/$UID/docker.sock`
@@ -131,6 +134,12 @@ This plugin installs nothing, docker itself must be set up beforehand.
 This plugin adds to `fpath` a new path `completions` which is `$XDG_CACHE_HOME/completions` or `$HOME/.cache/zsh/completions`
 and then adds (only if it doesn't exist) `gitlab-ci-local` completion file, generated once with `gitlab-ci-local --completion`
 instead of evaluating it on every shell startup.
+
+### gpg-edit
+
+This plugin adds a `gpg-edit` command to edit passphrase-encrypted (`gpg --symmetric`) files in place with your editor.
+
+For more information, use `gpg-edit --help` command.
 
 ### highlight-styles
 
@@ -156,6 +165,7 @@ instead of evaluating it on every shell startup.
 ### release-sync
 
 This plugin adds a `release-sync` command to synchronize releases (artifacts included) between GitHub and GitLab repositories.
+
 For more information, use `release-sync --help` command.
 
 ### task-completion
