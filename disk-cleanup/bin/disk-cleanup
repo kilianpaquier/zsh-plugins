@@ -30,6 +30,54 @@ info() {
   printf "${blue}INFO${no_color} %s\n" "$1"
 }
 
+# Never collides with info or warn output, which always starts with an ANSI escape.
+done_marker=$(printf '\001')
+clear_bar=$(printf '\r\033[K\033[A')
+
+progress() {
+  pending=" "
+  total=0
+  for name in $1; do
+    pending="$pending$name "
+    total=$((total + 1))
+  done
+  count=0
+
+  drawn=
+  tty=
+  [ -t 2 ] && tty=1
+  cols=$(stty size <&2 2>/dev/null | cut -d' ' -f2 || true)
+  [ "${cols:-0}" -gt 0 ] || cols=80
+
+  while IFS= read -r line; do
+    case "$line" in
+    "$done_marker"*)
+      name="${line#"$done_marker"}"
+      pending="${pending%%" $name "*} ${pending#*" $name "}"
+      count=$((count + 1))
+      ;;
+    *)
+      [ -z "$drawn" ] || printf '%s' "$clear_bar" >&2
+      drawn=
+      printf '%s\n' "$line"
+      ;;
+    esac
+    [ -n "$tty" ] || continue
+
+    filled=$((count * 20 / total))
+    bar=
+    i=0
+    while [ "$i" -lt 20 ]; do
+      if [ "$i" -lt "$filled" ]; then bar="$bar#"; else bar="$bar-"; fi
+      i=$((i + 1))
+    done
+    [ -n "$drawn" ] || printf '\n' >&2
+    drawn=1
+    printf '\r\033[K%s' "$(printf '[%s] %d/%d waiting:%s' "$bar" "$count" "$total" "$pending" | cut -c "1-$cols")" >&2
+  done
+  [ -z "$drawn" ] || printf '%s' "$clear_bar" >&2
+}
+
 #####################################################################
 #
 # Paths
@@ -412,11 +460,21 @@ main() {
     target_probe "$name" && detected="$detected $name"
   done
 
-  for name in $detected; do
-    target_report "$name" &
-  done
-  [ -n "$fast" ] || uncovered_report "$detected" &
-  wait
+  jobs="$detected"
+  [ -n "$fast" ] || jobs="$jobs uncovered"
+  {
+    # covered_dirs reassigns name, so the loop uses its own variable.
+    for job in $jobs; do
+      {
+        case "$job" in
+        uncovered) uncovered_report "$detected" ;;
+        *) target_report "$job" ;;
+        esac || true
+        printf '%s%s\n' "$done_marker" "$job"
+      } &
+    done
+    wait
+  } | progress "$jobs"
 
   [ -n "$run" ] || { printf '\nRerun with --run --<tool> (or --all) to clean a listed target\n'; return 0; }
   [ -z "$all" ] || selected="$detected"
