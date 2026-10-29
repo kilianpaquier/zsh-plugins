@@ -19,7 +19,6 @@
 - [Plugins](#plugins)
   - [chezmoi-completion](#chezmoi-completion)
   - [disk-cleanup](#disk-cleanup)
-  - [docker-rootless](#docker-rootless)
   - [gitlab-ci-local-completion](#gitlab-ci-local-completion)
   - [gpg-edit](#gpg-edit)
   - [highlight-styles](#highlight-styles)
@@ -117,17 +116,6 @@ This plugin adds a `disk-cleanup` command that clears dev-tool caches
 and stale tools (Claude Code, Codex, Copilot, VSCode Server) versions, skipping anything not installed.
 
 For more information, use `disk-cleanup --help` command.
-
-### docker-rootless
-
-Exports `DOCKER_HOST` to `unix://$XDG_RUNTIME_DIR/docker.sock` or `unix:///run/user/$UID/docker.sock`
-when a rootless docker installation is detected.
-
-Detection is the presence of the systemd user unit created by `dockerd-rootless-setuptool.sh install`,
-in `$XDG_CONFIG_HOME/systemd/user/docker.service` or `$HOME/.config/systemd/user/docker.service`.
-It relies on a single file check to keep shell startup free of any command execution.
-
-This plugin installs nothing, docker itself must be set up beforehand.
 
 ### gitlab-ci-local-completion
 
