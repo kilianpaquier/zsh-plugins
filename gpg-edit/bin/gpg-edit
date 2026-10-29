@@ -45,9 +45,9 @@ info() {
 # Outputs:
 #   The content on stdout.
 write_template() {
-  dir=$(dirname "$file")
+  dir=$(readlink -f "$(dirname "$file")")
   if [ -n "$ext" ]; then
-    for example in "$dir/$(basename "$(readlink -f "$dir")").example.$ext" "$dir/example.$ext"; do
+    for example in "$dir/${dir##*/}.example.$ext" "$dir/example.$ext"; do
       if [ -f "$example" ]; then
         cat "$example"
         return
