@@ -37,18 +37,22 @@ info() {
 #####################################################################
 
 # Prints the starting content of a new file.
-# Uses '<name>.example.<ext>' next to the file when present, otherwise a built-in example for the extension.
+# Uses '<dir>.example.<ext>' then 'example.<ext>' in the file's directory when present, otherwise a built-in example for the extension.
 #
 # Globals:
-#   file, name, ext
+#   file, ext
 #
 # Outputs:
 #   The content on stdout.
 write_template() {
-  example="$(dirname "$file")/${name%.*}.example.$ext"
-  if [ -n "$ext" ] && [ -f "$example" ]; then
-    cat "$example"
-    return
+  dir=$(dirname "$file")
+  if [ -n "$ext" ]; then
+    for example in "$dir/$(basename "$(readlink -f "$dir")").example.$ext" "$dir/example.$ext"; do
+      if [ -f "$example" ]; then
+        cat "$example"
+        return
+      fi
+    done
   fi
 
   case "$ext" in
@@ -213,7 +217,7 @@ usage() {
 Usage: gpg-edit [-h] <file>
 
 Edit a passphrase-protected file in your editor. Closing the editor saves it encrypted again.
-A missing file is created from '<name>.example.<ext>' when one sits next to it.
+A missing file is created from '<dir>.example.<ext>' or 'example.<ext>' when one sits in its directory.
 
 Arguments:
   file  Encrypted file to edit, created when missing (e.g. secrets.yaml.gpg, .env.gpg)
