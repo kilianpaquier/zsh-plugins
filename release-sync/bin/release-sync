@@ -176,12 +176,12 @@ Synchronize releases from a source platform to a target platform.
 Arguments:
   source  Source platform and repository (format: platform[:repository])
             - platform: 'github' or 'gitlab' (required)
-            - repository: optional, auto-detected if not provided
+            - repository: optional, defaults to the target repository, else auto-detected
             Example: github:owner/repo or gitlab
 
   target  Target platform and repository (format: platform[:repository])
             - platform: 'github' or 'gitlab' (required)
-            - repository: optional, auto-detected if not provided
+            - repository: optional, defaults to the source repository, else auto-detected
             Example: gitlab:group/project or github
 
   version Specific release version to sync (default: all releases synced)
@@ -195,6 +195,9 @@ Examples:
 
   # Sync all releases with explicit repositories
   release-sync github:owner/repo gitlab:group/project
+
+  # Sync all releases of the same repository on both platforms
+  release-sync gitlab:owner/repo github
 
   # Sync a specific version
   release-sync github:owner/repo gitlab:group/project v1.0.0
@@ -260,6 +263,9 @@ parse_arguments() {
   *:*) target_repository=${target_spec#*:} ;;
   esac
 
+  [ -n "$source_repository" ] || source_repository=$target_repository
+  [ -n "$target_repository" ] || target_repository=$source_repository
+
   validate_platform "$source_platform" || return $?
   validate_platform "$target_platform" || return $?
 }
@@ -306,7 +312,7 @@ main() {
   fi
   tmpdir=$(mktemp -d)
 
-  info "Starting synchronization from '$source_platform' to '$target_platform'"
+  info "Starting synchronization from '$source_platform:$source_repository' to '$target_platform:$target_repository'"
 
   if [ -n "$version" ]; then
     sync_release "$version"
