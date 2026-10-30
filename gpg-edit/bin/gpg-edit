@@ -220,7 +220,7 @@ Edit a passphrase-protected file in your editor. Closing the editor saves it enc
 A missing file is created from '<dir>.example.<ext>' or 'example.<ext>' when one sits in its directory.
 
 Arguments:
-  file  Encrypted file to edit, created when missing (e.g. secrets.yaml.gpg, .env.gpg)
+  file  Encrypted file to edit, created when missing (e.g. secrets.yaml.enc, config.json.asc, .env.gpg)
 
 Examples:
   # Edit a secret, created when missing
@@ -270,9 +270,8 @@ parse_arguments() {
 
   # Strip the encryption extension so the editor detects the inner file type.
   name=$(basename "$file")
-  name=${name%.gpg}
-  name=${name%.asc}
   case "$name" in
+  *.*.*) name=${name%.*}; ext=${name##*.} ;;
   *.*) ext=${name##*.} ;;
   esac
 }
