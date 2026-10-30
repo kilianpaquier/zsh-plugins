@@ -38,11 +38,11 @@ urlencode() {
 # Runs one action on GitHub. gitlab() takes the same actions on GitLab.
 #
 # Arguments:
-#   repository                                         prints the current directory repository
-#   releases <repo>                                    prints release tags, oldest first
-#   release <repo> <tag>                               prints the release as {name, body, date}
-#   download <repo> <tag> <dir>                        downloads the release assets into dir
-#   create <repo> <tag> <dir> <title> <notes> <date>   creates the release with dir assets
+#   repository                                            prints the current directory repository
+#   releases <repo>                                       prints release tags, oldest first
+#   release <repo> <tag>                                  prints the release as {name, body, date}
+#   download <repo> <tag> <dir>                           downloads the release assets into dir
+#   create <repo> <tag> <title> <notes> <date> [file...]  creates the release with the files as assets
 #
 # Outputs:
 #   The action result on stdout.
@@ -54,7 +54,11 @@ github() {
   releases) gh -R "$1" release list --json tagName --limit 1000 --jq 'reverse | .[].tagName' ;;
   release) gh -R "$1" release view "$2" --json name,body,publishedAt --jq '{name, body, date: .publishedAt}' ;;
   download) gh -R "$1" release download "$2" -D "$3" ;;
-  create) gh -R "$1" release create "$2" "$3"/* --title "$4" --notes "$5" ;;
+  create)
+    repo=$1 tag=$2 title=$3 notes=$4
+    shift 5
+    gh -R "$repo" release create "$tag" "$@" --title "$title" --notes "$notes"
+    ;;
   esac
 }
 
@@ -68,7 +72,11 @@ gitlab() {
   releases) glab api --paginate "projects/$(urlencode "$1")/releases" | jq -rs 'add | reverse | .[].tag_name' ;;
   release) glab api "projects/$(urlencode "$1")/releases/$2" | jq '{name, body: .description, date: .released_at}' ;;
   download) glab -R "$1" release download "$2" -D "$3" ;;
-  create) glab -R "$1" release create "$2" "$3"/* --name "$4" --notes "$5" --released-at "$6" ;;
+  create)
+    repo=$1 tag=$2 title=$3 notes=$4 date=$5
+    shift 5
+    glab -R "$repo" release create "$tag" "$@" --name "$title" --notes "$notes" --released-at "$date"
+    ;;
   esac
 }
 
@@ -117,10 +125,13 @@ sync_release() {
     return 0
   fi
 
-  "$target_platform" create "$target_repository" "$release" "$assets" \
+  set -- "$assets"/*
+  [ -e "$1" ] || set -- # an unmatched glob stays literal in sh
+  "$target_platform" create "$target_repository" "$release" \
     "$(printf '%s' "$release_data" | jq -r '.name')" \
     "$(printf '%s' "$release_data" | jq -r '.body')" \
-    "$(printf '%s' "$release_data" | jq -r '.date')"
+    "$(printf '%s' "$release_data" | jq -r '.date')" \
+    "$@"
 }
 
 #####################################################################
