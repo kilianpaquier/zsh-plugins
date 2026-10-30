@@ -150,7 +150,7 @@ source_platform=
 target_platform=
 source_repository=
 target_repository=
-version=
+tags=
 
 # Checks the platform name and that its CLI is installed.
 #
@@ -169,7 +169,7 @@ validate_platform() {
 
 usage() {
   cat << 'EOF'
-Usage: release-sync [-h] [-n] <source> <target> [version]
+Usage: release-sync [-h] [-n] <source> <target> [tag...]
 
 Synchronize releases from a source platform to a target platform.
 
@@ -184,7 +184,7 @@ Arguments:
             - repository: optional, defaults to the source repository, else auto-detected
             Example: gitlab:group/project or github
 
-  version Specific release version to sync (default: all releases synced)
+  tag     Release tags to sync (default: all releases synced)
 
 Examples:
   # Sync all releases from GitHub to GitLab (auto-detect repositories)
@@ -192,6 +192,9 @@ Examples:
 
   # Sync a specific version from GitHub to GitLab (auto-detect repositories)
   release-sync github gitlab v1.0.0
+
+  # Sync several versions from GitHub to GitLab (auto-detect repositories)
+  release-sync github gitlab v1.0.0 v1.1.0
 
   # Sync all releases with explicit repositories
   release-sync github:owner/repo gitlab:group/project
@@ -217,10 +220,10 @@ Requirements:
 EOF
 }
 
-# Parses the CLI arguments into platforms, repositories and version.
+# Parses the CLI arguments into platforms, repositories and tags.
 #
 # Globals:
-#   dry_run, help, source_*, target_*, version (set)
+#   dry_run, help, source_*, target_*, tags (set)
 #
 # Returns:
 #   2 on invalid arguments.
@@ -235,12 +238,8 @@ parse_arguments() {
         source_spec=$1
       elif [ -z "$target_spec" ]; then
         target_spec=$1
-      elif [ -z "$version" ]; then
-        version=$1
       else
-        usage
-        error "Too many arguments."
-        return 2
+        tags="${tags:+$tags }$1"
       fi
       shift
       ;;
@@ -292,7 +291,7 @@ required_command() {
   fi
 }
 
-# Synchronizes the given version, or every source release oldest first.
+# Synchronizes the given tags, or every source release oldest first.
 main() {
   parse_arguments "$@" || return $?
   [ -z "$help" ] || return 0
@@ -314,19 +313,18 @@ main() {
 
   info "Starting synchronization from '$source_platform:$source_repository' to '$target_platform:$target_repository'"
 
-  if [ -n "$version" ]; then
-    sync_release "$version"
-    return
+  releases=$tags
+  if [ -z "$releases" ]; then
+    releases=$("$source_platform" releases "$source_repository") || {
+      error "Failed to retrieve releases"
+      return 1
+    }
   fi
-
-  releases=$("$source_platform" releases "$source_repository") || {
-    error "Failed to retrieve releases"
-    return 1
-  }
   if [ -z "$releases" ]; then
     info "No releases to synchronize"
     return 0
   fi
+  # shellcheck disable=SC2086 # split on purpose, a git tag can't hold whitespace
   for release in $releases; do
     sync_release "$release"
   done
