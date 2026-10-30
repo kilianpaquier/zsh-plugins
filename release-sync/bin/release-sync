@@ -87,7 +87,7 @@ gitlab() {
 #####################################################################
 
 # Copies one release, with its title, notes, date and assets, from the source to the target platform.
-# Skips a release already on the target, and stops before creation in dry run.
+# Skips a release already on the target, and only prints its summary in dry run.
 #
 # Globals:
 #   source_*, target_*, tmpdir, dry_run
@@ -110,7 +110,7 @@ sync_release() {
     return 1
   }
 
-  info "Synchronizing '$release' on '$target_platform'"
+  info "Synchronizing '$release' on '$target_platform'${dry_run:+ (dry run)}"
 
   assets="$tmpdir/$release"
   mkdir -p "$assets"
@@ -120,17 +120,19 @@ sync_release() {
   }
   rm -f "$assets/"*"$release"* # remove potential archive assets
 
+  set -- "$assets"/*
+  [ -e "$1" ] || set -- # an unmatched glob stays literal in sh
+  release_title=$(printf '%s' "$release_data" | jq -r '.name')
+  release_date=$(printf '%s' "$release_data" | jq -r '.date')
+
   if [ -n "$dry_run" ]; then
-    info "Skipping '$release' creation (dry run)"
+    info "Would create '$release' (title: $release_title, date: $release_date, $# assets)"
     return 0
   fi
 
-  set -- "$assets"/*
-  [ -e "$1" ] || set -- # an unmatched glob stays literal in sh
-  "$target_platform" create "$target_repository" "$release" \
-    "$(printf '%s' "$release_data" | jq -r '.name')" \
+  "$target_platform" create "$target_repository" "$release" "$release_title" \
     "$(printf '%s' "$release_data" | jq -r '.body')" \
-    "$(printf '%s' "$release_data" | jq -r '.date')" \
+    "$release_date" \
     "$@"
 }
 
@@ -305,7 +307,6 @@ main() {
   tmpdir=$(mktemp -d)
 
   info "Starting synchronization from '$source_platform' to '$target_platform'"
-  [ -z "$dry_run" ] || info "Nothing will be created (dry run)"
 
   if [ -n "$version" ]; then
     sync_release "$version"
