@@ -71,7 +71,11 @@ gitlab() {
   # --paginate can print one array per page, so they are merged before reversing.
   releases) glab api --paginate "projects/$(urlencode "$1")/releases" | jq -rs 'add | reverse | .[].tag_name' ;;
   release) glab api "projects/$(urlencode "$1")/releases/$2" | jq '{name, body: .description, date: .released_at}' ;;
-  download) glab -R "$1" release download "$2" -D "$3" ;;
+  # Without an asset name, glab also downloads the source archives, which GitLab rate limits.
+  download)
+    glab api "projects/$(urlencode "$1")/releases/$2" | jq -j '.assets.links[] | .name + "\u0000"' |
+      xargs -0 -I {} glab -R "$1" release download "$2" -n {} -D "$3"
+    ;;
   create)
     repo=$1 tag=$2 title=$3 notes=$4 date=$5
     shift 5
@@ -118,7 +122,6 @@ sync_release() {
     error "Failed to download release '$release'"
     return 1
   }
-  rm -f "$assets/"*"$release"* # remove potential archive assets
 
   set -- "$assets"/*
   [ -e "$1" ] || set -- # an unmatched glob stays literal in sh
@@ -217,6 +220,7 @@ Requirements:
   - 'glab' command (GitLab CLI) for GitLab operations
   - 'jq' command for JSON processing
   - 'mktemp' command for temporary directory creation
+  - 'xargs' command for GitLab asset downloads
 EOF
 }
 
@@ -295,7 +299,7 @@ required_command() {
 main() {
   parse_arguments "$@" || return $?
   [ -z "$help" ] || return 0
-  for cmd in mktemp jq; do required_command "$cmd" || return $?; done
+  for cmd in mktemp jq xargs; do required_command "$cmd" || return $?; done
 
   if [ -z "$source_repository" ]; then
     source_repository=$("$source_platform" repository) || {
