@@ -6,27 +6,33 @@ completions="${XDG_CACHE_HOME:-"$HOME/.cache/zsh"}/completions"
 mkdir -p "$completions"
 [[ -n ${fpath[(r)$completions]} ]] || fpath+=("$completions")
 
-for cmd in "${ZSH_COMPLETIONS[@]}"; do
-  tool="${cmd%% *}"
-  if (( ! $+commands[$tool] )); then continue; fi
+() {
+  # Interactive shells print job start and done lines for each background job.
+  setopt local_options no_monitor
+  local cmd file fresh tool
 
-  file="$completions/_$tool"
-  fresh=("$file"(N.L+0md-7))
-  if (( $#fresh )); then continue; fi
+  for cmd in "${ZSH_COMPLETIONS[@]}"; do
+    tool="${cmd%% *}"
+    if (( ! $+commands[$tool] )); then continue; fi
 
-  (
-    # Skip writing when the generator fails or prints nothing, so it runs again next shell.
-    output="$(${=cmd} 2> /dev/null)" || exit
-    if [[ -z $output ]]; then exit; fi
+    file="$completions/_$tool"
+    fresh=("$file"(N.L+0md-7))
+    if (( $#fresh )); then continue; fi
 
-    print -r -- "$output" > "$file"
-  ) &
-done
-wait
+    (
+      # Skip writing when the generator fails or prints nothing, so it runs again next shell.
+      output="$(${=cmd} 2> /dev/null)" || exit
+      if [[ -z $output ]]; then exit; fi
+
+      print -r -- "$output" > "$file"
+    ) &
+  done
+  wait
+}
 
 if (( $+functions[compdef] )); then
   for tool in "${ZSH_COMPLETIONS_HELP[@]}"; do
     if (( $+commands[$tool] )); then compdef _gnu_generic "$tool"; fi
   done
 fi
-unset cmd completions file fresh tool
+unset completions tool
