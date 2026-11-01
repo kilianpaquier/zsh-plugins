@@ -73,8 +73,8 @@ gitlab() {
   release) glab api "projects/$(urlencode "$1")/releases/$2" | jq '{name, body: .description, date: .released_at}' ;;
   # Without an asset name, glab also downloads the source archives, which GitLab rate limits.
   download)
-    glab api "projects/$(urlencode "$1")/releases/$2" | jq -j '.assets.links[] | .name + "\u0000"' |
-      xargs -0 -I {} glab -R "$1" release download "$2" -n {} -D "$3"
+    glab api "projects/$(urlencode "$1")/releases/$2" | jq -j '.assets.links[] | "-n\u0000" + .name + "\u0000"' |
+      xargs -0 -r glab -R "$1" release download "$2" -D "$3"
     ;;
   create)
     repo=$1 tag=$2 title=$3 notes=$4 date=$5
