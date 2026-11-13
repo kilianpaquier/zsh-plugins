@@ -192,7 +192,7 @@ data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
 nix_store_dir="/nix/store"
 
 targets() {
-  printf '%s\n' bun docker go golangci-lint mise mvn nix npm pip podman pre-commit terraform uv claude codex copilot vscode
+  printf '%s\n' bun docker go golangci-lint mise mvn nix nono npm pip podman pre-commit sbx terraform uv claude codex copilot vscode
 }
 
 is_target() {
@@ -390,6 +390,21 @@ target_nix() {
 }
 
 #--------------------------------------------------------------------
+# nono: audit logs older than 30 days, rollback snapshots are already capped by nono.
+#--------------------------------------------------------------------
+
+nono_state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/nono"
+
+target_nono() {
+  case "$1" in
+  probe) has nono ;;
+  report) info "nono: $(dir_size "$nono_state_dir")" ;;
+  clean) nono audit cleanup --older-than 30 && nono rollback cleanup --older-than 30 ;;
+  dirs) printf '%s\n' "$nono_state_dir" ;;
+  esac
+}
+
+#--------------------------------------------------------------------
 # npm: npm cache, npx cache and node-gyp cache.
 #--------------------------------------------------------------------
 
@@ -449,6 +464,21 @@ target_pre_commit() {
   report) info "pre-commit: $(dir_size "$pre_commit_cache_dir")" ;;
   clean) pre-commit clean ;;
   dirs) printf '%s\n' "$pre_commit_cache_dir" ;;
+  esac
+}
+
+#--------------------------------------------------------------------
+# sbx: stopped sandboxes older than the prune age.
+#--------------------------------------------------------------------
+
+sbx_data_dir="$data_home/sandboxes"
+
+target_sbx() {
+  case "$1" in
+  probe) has sbx ;;
+  report) info "sbx: $(dir_size "$sbx_data_dir")" ;;
+  clean) sbx prune --force --filter "until=${oci_prune_age}" ;;
+  dirs) printf '%s\n' "$sbx_data_dir" ;;
   esac
 }
 
@@ -612,7 +642,7 @@ Options:
   -f, --fast                      Skip the large directories scan (slowest step).
   -w, --warn-level <percent>      Warn above this disk usage (default 80, or DC_WARN_LEVEL).
   -t, --cache-threshold <size>    Show unowned directories above this size (default 500M, or DC_CACHE_THRESHOLD).
-  -p, --oci-prune-age <duration>  Keep docker and podman data newer than this (default 120h, or DC_OCI_PRUNE_AGE).
+  -p, --oci-prune-age <duration>  Keep docker, podman and sbx data newer than this (default 120h, or DC_OCI_PRUNE_AGE).
   -h, --help                      Show this help.
 
 Tools:
@@ -623,10 +653,12 @@ Tools:
   --mise           Cache and unused tool versions.
   --mvn            Whole local Maven repository (dependencies are downloaded again).
   --nix            Old generations and unreachable store paths.
+  --nono           Audit logs and rollback snapshots older than 30 days.
   --npm            npm, npx and node-gyp caches.
   --pip            pip cache.
   --podman         Build cache, containers and images older than the prune age, and unused volumes.
   --pre-commit     pre-commit cache.
+  --sbx            Stopped sandboxes older than the prune age, with their logins and history.
   --terraform      Terraform plugin cache.
   --uv             uv cache.
   --claude         Old Claude Code versions.
