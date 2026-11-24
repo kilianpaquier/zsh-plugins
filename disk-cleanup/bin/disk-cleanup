@@ -189,6 +189,7 @@ oci_clean() {
 
 cache_home="${XDG_CACHE_HOME:-$HOME/.cache}"
 data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+state_home="${XDG_STATE_HOME:-$HOME/.local/state}"
 nix_store_dir="/nix/store"
 
 targets() {
@@ -429,16 +430,17 @@ target_kubectl() {
 }
 
 #--------------------------------------------------------------------
-# microsandbox: images no sandbox uses and unused runtime memory cache files.
+# microsandbox: images no sandbox uses, unused runtime memory cache files and partial downloads.
 #--------------------------------------------------------------------
 
 microsandbox_dir="$HOME/.microsandbox"
+microsandbox_tmp_dir="$microsandbox_dir/cache/tmp"
 
 target_microsandbox() {
   case "$1" in
   probe) has msb ;;
   report) info "microsandbox: $(dir_size "$microsandbox_dir")" ;;
-  clean) msb image prune --yes && msb prune --yes ;;
+  clean) msb image prune --yes && msb prune --yes && empty_dir "$microsandbox_tmp_dir" ;;
   dirs) printf '%s\n' "$microsandbox_dir" ;;
   esac
 }
@@ -500,7 +502,7 @@ target_nix() {
 # nono: audit logs older than 30 days, rollback snapshots are already capped by nono.
 #--------------------------------------------------------------------
 
-nono_state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/nono"
+nono_state_dir="$state_home/nono"
 
 target_nono() {
   case "$1" in
@@ -590,17 +592,22 @@ target_pre_commit() {
 }
 
 #--------------------------------------------------------------------
-# sbx: stopped sandboxes older than the prune age.
+# sbx: stopped sandboxes older than the prune age and the kit builder, sbx itself collects unused kit builds after 7 days.
 #--------------------------------------------------------------------
 
-sbx_data_dir="$data_home/sandboxes"
+sbx_state_dir="$state_home/sandboxes"
 
 target_sbx() {
   case "$1" in
   probe) has sbx ;;
-  report) info "sbx: $(dir_size "$sbx_data_dir")" ;;
-  clean) sbx prune --force --filter "until=${oci_prune_age}" ;;
-  dirs) printf '%s\n' "$sbx_data_dir" ;;
+  report) info "sbx: $(dir_size "$sbx_state_dir")" ;;
+  clean)
+    sbx prune --force --filter "until=${oci_prune_age}" || return 1
+    if sbx kit builder status 2>/dev/null | grep -q 'Builder: *sbx-kit-builder'; then
+      sbx kit builder rm --force || return 1
+    fi
+    ;;
+  dirs) printf '%s\n' "$sbx_state_dir" ;;
   esac
 }
 
@@ -792,7 +799,7 @@ Tools:
   --helmfile       helmfile chart cache.
   --hugo           Module, image and resource caches.
   --kubectl        Discovery and HTTP caches.
-  --microsandbox   Images no sandbox uses and unused runtime memory cache files.
+  --microsandbox   Images no sandbox uses, unused runtime memory cache files and partial downloads.
   --mise           Cache and unused tool versions.
   --mvn            Whole local Maven repository (dependencies are downloaded again).
   --nix            Old generations and unreachable store paths.
@@ -802,7 +809,7 @@ Tools:
   --pip            pip cache.
   --podman         Build cache, containers and images older than the prune age, and unused volumes.
   --pre-commit     pre-commit cache.
-  --sbx            Stopped sandboxes older than the prune age, with their logins and history.
+  --sbx            Stopped sandboxes older than the prune age, with their logins and history, and the kit builder.
   --terraform      Terraform plugin cache.
   --tflint         Plugins (run 'tflint --init' after).
   --uv             uv cache.
