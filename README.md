@@ -122,6 +122,8 @@ Tools without a completion command go in `ZSH_COMPLETIONS_HELP`, completed from 
 ZSH_COMPLETIONS_HELP=(age age-keygen)
 ```
 
+The `disk-cleanup`, `gpg-edit` and `release-sync` plugins complete their own options and arguments, so leave them out of `ZSH_COMPLETIONS_HELP`.
+
 ### disk-cleanup
 
 This plugin adds a `disk-cleanup` command that clears dev-tool caches
