@@ -181,6 +181,18 @@ oci_clean() {
     "$1" volume prune -f
 }
 
+# Prints the lines whose largest size is above cache_threshold, and the lines holding no size (e.g. 'daemon unreachable').
+#
+# Globals:
+#   cache_threshold
+above_threshold() {
+  while IFS= read -r line; do
+    sizes=$(printf '%s\n' "$line" | tr ' ,()' '\n' | grep -E '^[0-9.]+[kKMGTP]?i?B?$' || true)
+    if [ -n "$sizes" ] && [ "$(printf '%s\n%s\n' "$sizes" "$cache_threshold" | sort -h | tail -1)" = "$cache_threshold" ]; then continue; fi
+    printf '%s\n' "$line"
+  done
+}
+
 #####################################################################
 #
 # Targets
@@ -737,7 +749,7 @@ report_targets() {
       {
         case "$job" in
         uncovered) uncovered_report "$1" ;;
-        *) target "$job" report ;;
+        *) target "$job" report | above_threshold ;;
         esac || true
         printf '%s%s\n' "$done_marker" "$job"
       } &
@@ -785,7 +797,7 @@ Options:
   -a, --all                       Clean every installed tool.
   -f, --fast                      Skip the large directories scan (slowest step).
   -w, --warn-level <percent>      Warn above this disk usage (default 80, or DC_WARN_LEVEL).
-  -t, --cache-threshold <size>    Show unowned directories above this size (default 500M, or DC_CACHE_THRESHOLD).
+  -t, --cache-threshold <size>    Show tools and unowned directories above this size (default 500M, or DC_CACHE_THRESHOLD).
   -p, --oci-prune-age <duration>  Keep docker, podman and sbx data newer than this (default 120h, or DC_OCI_PRUNE_AGE).
   -h, --help                      Show this help.
 
