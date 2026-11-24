@@ -15,6 +15,9 @@ mkdir -p "$completions"
     tool="${cmd%% *}"
     if (( ! $+commands[$tool] )); then continue; fi
 
+    # Skip a launcher shim, a symlink whose target has another name than the command, since running it may install the tool.
+    if [[ ${${commands[$tool]:A}:t} != "$tool" ]]; then continue; fi
+
     file="$completions/_$tool"
     fresh=("$file"(N.L+0md-7))
     if (( $#fresh )); then continue; fi
