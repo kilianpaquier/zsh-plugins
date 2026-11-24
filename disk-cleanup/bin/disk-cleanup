@@ -287,22 +287,27 @@ target_codex() {
 }
 
 #--------------------------------------------------------------------
-# copilot: stale Copilot package versions.
+# copilot: stale Copilot package versions and plugin marketplace cache.
 #--------------------------------------------------------------------
 
-copilot_pkg_dir="$cache_home/copilot/pkg"
+copilot_cache_dir="${COPILOT_CACHE_HOME:-$cache_home/copilot}"
+copilot_marketplaces_dir="$copilot_cache_dir/marketplaces"
+copilot_pkg_dir="$copilot_cache_dir/pkg"
 
 target_copilot() {
   case "$1" in
-  probe) [ -d "$copilot_pkg_dir" ] ;;
+  probe) [ -d "$copilot_pkg_dir" ] || [ -d "$copilot_marketplaces_dir" ] ;;
   stale)
     active=$(newest "$copilot_pkg_dir" -mindepth 2 -maxdepth 2 -type d)
     [ -n "$active" ] || return 1
     find "$copilot_pkg_dir" -mindepth 2 -maxdepth 2 -type d ! -path "$active"
     ;;
-  report) report_stale copilot "$(target_copilot stale)" ;;
-  clean) clean_stale "$(target_copilot stale)" ;;
-  dirs) printf '%s\n' "$copilot_pkg_dir" ;;
+  report)
+    info "copilot: marketplaces $(dir_size "$copilot_marketplaces_dir")"
+    report_stale copilot "$(target_copilot stale)"
+    ;;
+  clean) clean_stale "$(target_copilot stale)" && empty_dir "$copilot_marketplaces_dir" ;;
+  dirs) printf '%s\n' "$copilot_marketplaces_dir" "$copilot_pkg_dir" ;;
   esac
 }
 
@@ -803,7 +808,7 @@ Tools:
   --uv             uv cache.
   --claude         Old Claude Code versions and MCP server logs.
   --codex          Old Codex releases.
-  --copilot        Old Copilot package versions.
+  --copilot        Old Copilot package versions and plugin marketplace cache.
   --vscode         Old VSCode Server versions.
 
 Requirements:
